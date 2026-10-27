@@ -1,0 +1,51 @@
+{
+  "company": {
+    "name": "Thiên Khôi CDC",
+    "legalName": "Công ty Thiên Khôi CDC",
+    "tagline": "Thiết kế · Xây dựng · Hoàn thiện nội thất",
+    "description": "Thiên Khôi CDC thiết kế và thi công nhà phố, biệt thự, nội thất trọn gói tại TP. Hồ Chí Minh — một đầu mối duy nhất từ bản vẽ đến ngày bàn giao chìa khóa.",
+    "phone": "0900 000 000",
+    "phoneHref": "+84900000000",
+    "zalo": "https://zalo.me/84900000000",
+    "email": "lienhe@thienkhoicdc.vn",
+    "address": "TP. Hồ Chí Minh",
+    "hours": "Thứ 2 – Thứ 7 · 8:00 – 18:00",
+    "siteUrl": "https://thienkhoicdc.vn"
+  },
+  "commitments": [
+    { "title": "Báo giá minh bạch", "text": "Bảng dự toán chi tiết theo từng hạng mục, vật tư ghi rõ chủng loại và thương hiệu trước khi ký hợp đồng." },
+    { "title": "Đúng tiến độ", "text": "Tiến độ thi công chia theo mốc, cập nhật hình ảnh công trường định kỳ để chủ nhà theo dõi từ xa." },
+    { "title": "Bảo hành rõ ràng", "text": "Điều khoản bảo hành kết cấu, chống thấm và hoàn thiện được ghi cụ thể trong hợp đồng." }
+  ],
+  "services": [
+    { "id": "thiet-ke-kien-truc", "icon": "compass", "title": "Thiết kế kiến trúc", "text": "Phương án mặt bằng, phối cảnh 3D, hồ sơ kỹ thuật và hồ sơ xin phép xây dựng cho nhà phố, biệt thự." },
+    { "id": "xay-tho", "icon": "layers", "title": "Xây dựng phần thô", "text": "Móng, khung bê tông cốt thép, tường bao, chống thấm — giám sát chặt chẽ từng lần đổ bê tông." },
+    { "id": "tron-goi", "icon": "key", "title": "Thi công trọn gói", "text": "Chìa khóa trao tay: từ phần thô, điện nước đến hoàn thiện. Một hợp đồng, một đầu mối chịu trách nhiệm." },
+    { "id": "noi-that", "icon": "sofa", "title": "Thiết kế & thi công nội thất", "text": "Nội thất may đo, đá ốp, đèn hắt, tủ bếp, cầu thang — đồng bộ phong cách từ ngoài vào trong." },
+    { "id": "cai-tao", "icon": "hammer", "title": "Cải tạo, sửa chữa nhà", "text": "Nâng tầng, mở rộng, thay đổi công năng, làm mới mặt tiền và nội thất cho nhà phố cũ." },
+    { "id": "giam-sat", "icon": "clipboard", "title": "Giám sát & quản lý dự án", "text": "Kiểm soát chất lượng, khối lượng và tiến độ thay chủ đầu tư, báo cáo định kỳ minh bạch." }
+  ],
+  "process": [
+    { "title": "Tư vấn & khảo sát", "text": "Lắng nghe nhu cầu, khảo sát hiện trạng, xác định ngân sách và mốc thời gian." },
+    { "title": "Ý tưởng & phương án", "text": "Đề xuất mặt bằng công năng và phong cách, chỉnh sửa đến khi chủ nhà ưng ý." },
+    { "title": "Hồ sơ & dự toán", "text": "Phối cảnh 3D, bản vẽ kỹ thuật và bảng dự toán chi tiết từng hạng mục." },
+    { "title": "Pháp lý", "text": "Hỗ trợ chuẩn bị hồ sơ xin phép xây dựng theo quy định." },
+    { "title": "Thi công", "text": "Triển khai theo tiến độ đã ký, giám sát kỹ thuật thường trực, cập nhật hình ảnh." },
+    { "title": "Bàn giao & bảo hành", "text": "Nghiệm thu từng hạng mục, bàn giao hồ sơ hoàn công và đồng hành bảo hành." }
+  ],
+  "projects": [
+    { "image": "/assets/img/p1.webp", "title": "Biệt thự đá đen", "category": "Kiến trúc", "text": "Khối kiến trúc đá tối, đèn LED hắt tạo chiều sâu cho mặt tiền về đêm." },
+    { "image": "/assets/img/p3.webp", "title": "Phòng khách thông tầng", "category": "Nội thất", "text": "Vách kính lớn, đá vân tối, đèn vòng treo và lò sưởi âm tường." },
+    { "image": "/assets/img/p4.webp", "title": "Không gian mở hướng hồ bơi", "category": "Nội thất", "text": "Sofa tông kem, cây ô liu và cầu thang bậc treo tạo điểm nhấn." },
+    { "image": "/assets/img/p5.webp", "title": "Bếp đảo đá marble", "category": "Hoàn thiện", "text": "Đảo bếp đá đen vân trắng, LED chân tủ và đèn thả tối giản." },
+    { "image": "/assets/img/p6.webp", "title": "Phòng sinh hoạt sáng", "category": "Nội thất", "text": "Sàn đá sáng màu, rèm voan và ánh sáng tự nhiên tràn ngập." },
+    { "image": "/assets/img/p8.webp", "title": "Bếp – ăn liên thông", "category": "Hoàn thiện", "text": "Hệ tủ bếp kịch trần, đảo bếp kết nối trực tiếp với sân vườn." }
+  ],
+  "budgets": [
+    { "id": "duoi-1ty", "label": "Dưới 1 tỷ" },
+    { "id": "1-3ty", "label": "1 – 3 tỷ" },
+    { "id": "3-5ty", "label": "3 – 5 tỷ" },
+    { "id": "tren-5ty", "label": "Trên 5 tỷ" },
+    { "id": "chua-xac-dinh", "label": "Chưa xác định" }
+  ]
+}

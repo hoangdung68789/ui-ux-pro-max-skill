@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Quản trị — Thiên Khôi CDC</title>
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600&family=Cormorant+Garamond:wght@500&display=swap&subset=vietnamese">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/admin.css">
+  <script src="/admin.js" defer></script>
+</head>
+<body class="admin">
+  <header class="admin__bar">
+    <a class="brand" href="/">
+      <svg class="brand__mark" viewBox="0 0 40 40" aria-hidden="true"><path d="M6 34V14L20 5l14 9v20" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M14 34V20h12v14M6 34h28" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+      <span class="brand__name">Thiên Khôi <b>CDC</b></span>
+    </a>
+    <span class="admin__tag">Quản lý yêu cầu báo giá</span>
+    <button class="btn btn--ghost admin__logout" type="button" data-logout hidden>Đăng xuất</button>
+  </header>
+
+  <main class="admin__main">
+    <form class="admin__login" data-login>
+      <h1>Đăng nhập quản trị</h1>
+      <p>Nhập <code>ADMIN_TOKEN</code> được cấu hình trong file <code>.env</code> (hoặc mã tạm in ra khi khởi động server).</p>
+      <label class="field">
+        <span>Mã quản trị</span>
+        <input type="password" name="token" autocomplete="current-password" required>
+      </label>
+      <button class="btn btn--gold" type="submit">Đăng nhập</button>
+      <p class="admin__msg" data-login-msg role="alert"></p>
+    </form>
+
+    <section class="admin__panel" data-panel hidden>
+      <div class="admin__stats" data-stats></div>
+      <div class="admin__tools">
+        <label class="admin__filter">Lọc
+          <select data-filter>
+            <option value="">Tất cả</option>
+            <option value="new">Mới</option>
+            <option value="contacted">Đã liên hệ</option>
+            <option value="quoted">Đã báo giá</option>
+            <option value="won">Đã ký</option>
+            <option value="lost">Không thành</option>
+          </select>
+        </label>
+        <input class="admin__search" type="search" placeholder="Tìm tên, SĐT, khu vực…" data-search aria-label="Tìm kiếm">
+        <button class="btn btn--ghost" type="button" data-refresh>Làm mới</button>
+        <button class="btn btn--gold" type="button" data-export>Xuất CSV</button>
+      </div>
+      <div class="admin__tablewrap">
+        <table class="admin__table">
+          <thead>
+            <tr><th>Ngày</th><th>Khách hàng</th><th>Nhu cầu</th><th>Ghi chú khách</th><th>Trạng thái</th><th>Ghi chú nội bộ</th><th></th></tr>
+          </thead>
+          <tbody data-rows></tbody>
+        </table>
+        <p class="admin__empty" data-empty hidden>Chưa có yêu cầu nào.</p>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "thien-khoi-cdc-website",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Website Thiên Khôi CDC — thiết kế & thi công xây dựng, hero cuộn 3D, API nhận báo giá và trang quản trị.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node --test test/*.test.js"
+  },
+  "engines": { "node": ">=18" }
+}

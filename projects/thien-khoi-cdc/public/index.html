@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{company.name}} — Thiết kế &amp; Thi công Nhà phố, Biệt thự, Nội thất</title>
+  <meta name="description" content="{{company.description}}">
+  <meta name="theme-color" content="#0d0c0a">
+  <link rel="canonical" href="{{company.siteUrl}}/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="{{company.name}} — Thiết kế &amp; Thi công trọn gói">
+  <meta property="og:description" content="{{company.description}}">
+  <meta property="og:image" content="{{company.siteUrl}}/assets/img/og.jpg">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Allura&family=Be+Vietnam+Pro:wght@300;400;500;600&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap&subset=vietnamese">
+  <link rel="preload" as="image" href="/assets/frames/lg/f001.webp" fetchpriority="high">
+  <link rel="stylesheet" href="/styles.css">
+  <script type="application/ld+json">{{{JSONLD}}}</script>
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#gioi-thieu">Bỏ qua phần mở đầu</a>
+
+  <!-- ============ NAV ============ -->
+  <header class="nav" data-nav>
+    <a class="brand" href="#top" aria-label="{{company.name}} — về đầu trang">
+      <svg class="brand__mark" viewBox="0 0 40 40" aria-hidden="true"><path d="M6 34V14L20 5l14 9v20" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M14 34V20h12v14M6 34h28" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+      <span class="brand__name">Thiên Khôi <b>CDC</b></span>
+    </a>
+    <nav class="nav__links" aria-label="Điều hướng chính">
+      <a href="#gioi-thieu">Giới thiệu</a>
+      <a href="#dich-vu">Dịch vụ</a>
+      <a href="#du-an">Dự án</a>
+      <a href="#quy-trinh">Quy trình</a>
+    </nav>
+    <a class="btn btn--ghost nav__cta" href="#bao-gia">Nhận báo giá</a>
+    <button class="nav__toggle" type="button" aria-expanded="false" aria-controls="mobile-menu" aria-label="Mở menu"><span></span><span></span></button>
+  </header>
+  <div class="mobile-menu" id="mobile-menu" hidden>
+    <a href="#gioi-thieu">Giới thiệu</a>
+    <a href="#dich-vu">Dịch vụ</a>
+    <a href="#du-an">Dự án</a>
+    <a href="#quy-trinh">Quy trình</a>
+    <a href="#bao-gia">Nhận báo giá</a>
+  </div>
+
+  <main>
+    <!-- ============ HERO: SCROLL-DRIVEN 3D FLY-THROUGH ============ -->
+    <section class="hero" id="top" data-hero data-frames="180" aria-label="Giới thiệu hành trình kiến tạo">
+      <div class="hero__sticky">
+        <div class="hero__scene" data-scene>
+          <canvas class="hero__canvas" data-canvas aria-hidden="true"></canvas>
+          <img class="hero__poster" src="/assets/frames/lg/f001.webp" alt="" aria-hidden="true">
+        </div>
+        <div class="hero__shade" aria-hidden="true"></div>
+
+        <div class="hero__stage" data-stage>
+          <div class="chap chap--intro" data-chap data-in="0" data-out="0.14">
+            <p class="eyebrow">Thiết kế · Xây dựng · Nội thất — TP. Hồ Chí Minh</p>
+            <h1 class="hero__title">Chúng tôi kiến tạo<br><span class="script">những không gian</span> đáng sống</h1>
+            <p class="hero__sub">Một đầu mối duy nhất từ bản vẽ đầu tiên đến ngày bàn giao chìa khóa.</p>
+          </div>
+
+          <div class="chap" data-chap data-in="0.18" data-out="0.38">
+            <p class="chap__lead"><span class="chap__from">từ</span> <span class="script">ý tưởng</span></p>
+            <p class="chap__text">Mỗi công trình bắt đầu từ cách bạn muốn sống. Chúng tôi lắng nghe, khảo sát và phác thảo phương án kiến trúc phù hợp với khu đất và ngân sách.</p>
+            <p class="chap__aside">Thiết kế kiến trúc<br>nhà phố &amp; biệt thự</p>
+          </div>
+
+          <div class="chap" data-chap data-in="0.40" data-out="0.58">
+            <p class="chap__lead"><span class="chap__from">đến</span> <span class="script">thi công</span></p>
+            <p class="chap__text">Kỹ sư giám sát thường trực, vật tư rõ nguồn gốc, tiến độ chia theo mốc và hình ảnh công trường được cập nhật định kỳ.</p>
+            <p class="chap__aside">Thi công trọn gói<br>từ móng đến mái</p>
+          </div>
+
+          <div class="chap" data-chap data-in="0.60" data-out="0.78">
+            <p class="chap__lead"><span class="chap__from">đến</span> <span class="script">nội thất</span></p>
+            <p class="chap__text">Đá ốp, ánh sáng hắt, nội thất may đo — đồng bộ một phong cách từ mặt tiền vào đến từng căn phòng.</p>
+            <p class="chap__aside">Thiết kế &amp; thi công<br>nội thất cao cấp</p>
+          </div>
+
+          <div class="chap" data-chap data-in="0.80" data-out="1.01">
+            <p class="chap__lead"><span class="chap__from">và</span> <span class="script">bàn giao</span></p>
+            <p class="chap__text">Nghiệm thu từng hạng mục, trao chìa khóa cùng hồ sơ hoàn công và cam kết bảo hành bằng văn bản.</p>
+            <div class="chap__cta">
+              <a class="btn btn--gold" href="#bao-gia">Nhận tư vấn miễn phí</a>
+              <a class="btn btn--ghost" href="#du-an">Xem dự án</a>
+            </div>
+            <p class="chap__aside">Một đầu mối<br>từ bản vẽ đến chìa khóa</p>
+          </div>
+        </div>
+
+        <div class="hero__ui" aria-hidden="true">
+          <div class="scroll-cue" data-cue>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="7" y="3" width="10" height="17" rx="5"/><path class="scroll-cue__dot" d="M12 7v3"/></svg>
+            <span>Cuộn để khám phá</span>
+          </div>
+          <div class="hero__progress">
+            <span class="hero__count"><b data-count>01</b> / 05</span>
+            <span class="hero__bar"><i data-bar></i></span>
+          </div>
+          <ol class="hero__dots" data-dots>
+            <li></li><li></li><li></li><li></li><li></li>
+          </ol>
+        </div>
+
+        <div class="hero__loader" data-loader aria-hidden="true"><span data-loader-text>0%</span></div>
+      </div>
+    </section>
+
+    <!-- ============ 01 ABOUT ============ -->
+    <section class="section" id="gioi-thieu">
+      <div class="wrap">
+        <p class="kicker reveal"><span>01</span> Về chúng tôi</p>
+        <h2 class="statement reveal">{{company.name}} đồng hành cùng chủ nhà trong toàn bộ hành trình xây dựng — <span class="script">trọn vẹn</span> từ phương án kiến trúc, thi công đến hoàn thiện nội thất.</h2>
+        <ul class="commits">{{{COMMITMENTS}}}</ul>
+      </div>
+    </section>
+
+    <!-- ============ 02 SERVICES ============ -->
+    <section class="section section--alt" id="dich-vu">
+      <div class="wrap">
+        <div class="section__head">
+          <p class="kicker reveal"><span>02</span> Dịch vụ</p>
+          <h2 class="title reveal">Giải pháp <span class="script">trọn gói</span><br>cho ngôi nhà của bạn</h2>
+        </div>
+        <div class="services">{{{SERVICES}}}</div>
+      </div>
+    </section>
+
+    <!-- ============ 03 PROJECTS ============ -->
+    <section class="section" id="du-an">
+      <div class="wrap">
+        <div class="section__head section__head--split">
+          <div>
+            <p class="kicker reveal"><span>03</span> Dự án</p>
+            <h2 class="title reveal">Không gian <span class="script">chúng tôi</span> theo đuổi</h2>
+          </div>
+          <p class="section__note reveal">Ngôn ngữ thiết kế: đá tối, ánh sáng hắt ấm, vật liệu tự nhiên và những khoảng kính lớn mở ra thiên nhiên.</p>
+        </div>
+        <div class="projects">{{{PROJECTS}}}</div>
+      </div>
+    </section>
+
+    <!-- ============ 04 PROCESS ============ -->
+    <section class="section section--alt" id="quy-trinh">
+      <div class="wrap">
+        <div class="section__head">
+          <p class="kicker reveal"><span>04</span> Quy trình</p>
+          <h2 class="title reveal">Sáu bước, <span class="script">một</span> đầu mối</h2>
+        </div>
+        <ol class="steps">{{{PROCESS}}}</ol>
+      </div>
+    </section>
+
+    <!-- ============ 05 QUOTE ============ -->
+    <section class="section quote" id="bao-gia">
+      <div class="wrap quote__grid">
+        <div class="quote__intro">
+          <p class="kicker reveal"><span>05</span> Báo giá</p>
+          <h2 class="title reveal">Bắt đầu <span class="script">ngôi nhà</span> của bạn</h2>
+          <p class="reveal">Để lại thông tin, kỹ sư của {{company.name}} sẽ liên hệ trong giờ làm việc để tư vấn và hẹn lịch khảo sát.</p>
+          <ul class="contact reveal">
+            <li><span>Hotline</span><a href="tel:{{company.phoneHref}}">{{company.phone}}</a></li>
+            <li><span>Zalo</span><a href="{{company.zalo}}" target="_blank" rel="noopener">Nhắn tin Zalo</a></li>
+            <li><span>Email</span><a href="mailto:{{company.email}}">{{company.email}}</a></li>
+            <li><span>Giờ làm việc</span><p>{{company.hours}}</p></li>
+            <li><span>Khu vực</span><p>{{company.address}}</p></li>
+          </ul>
+        </div>
+
+        <form class="form reveal" data-form novalidate>
+          <div class="field">
+            <label for="f-name">Họ và tên <i>*</i></label>
+            <input id="f-name" name="name" autocomplete="name" required maxlength="80">
+            <p class="field__err" data-err="name"></p>
+          </div>
+          <div class="field field--half">
+            <label for="f-phone">Số điện thoại <i>*</i></label>
+            <input id="f-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" required maxlength="20" placeholder="0901 234 567">
+            <p class="field__err" data-err="phone"></p>
+          </div>
+          <div class="field field--half">
+            <label for="f-email">Email</label>
+            <input id="f-email" name="email" type="email" autocomplete="email" maxlength="120">
+            <p class="field__err" data-err="email"></p>
+          </div>
+          <div class="field field--half">
+            <label for="f-service">Dịch vụ quan tâm <i>*</i></label>
+            <select id="f-service" name="service" required>
+              <option value="">Chọn dịch vụ</option>
+              {{{SERVICE_OPTIONS}}}
+            </select>
+            <p class="field__err" data-err="service"></p>
+          </div>
+          <div class="field field--half">
+            <label for="f-budget">Ngân sách dự kiến</label>
+            <select id="f-budget" name="budget">
+              <option value="">Chọn mức ngân sách</option>
+              {{{BUDGET_OPTIONS}}}
+            </select>
+            <p class="field__err" data-err="budget"></p>
+          </div>
+          <div class="field field--half">
+            <label for="f-area">Diện tích đất (m²)</label>
+            <input id="f-area" name="area" type="number" inputmode="decimal" min="1" max="100000" step="any">
+            <p class="field__err" data-err="area"></p>
+          </div>
+          <div class="field field--half">
+            <label for="f-location">Khu vực công trình</label>
+            <input id="f-location" name="location" maxlength="120" placeholder="VD: Quận 7, TP. Thủ Đức">
+          </div>
+          <div class="field">
+            <label for="f-message">Mô tả nhu cầu</label>
+            <textarea id="f-message" name="message" rows="4" maxlength="2000" placeholder="Số tầng, số phòng ngủ, phong cách mong muốn, thời gian dự kiến khởi công…"></textarea>
+          </div>
+          <div class="hp" aria-hidden="true"><label>Website <input name="website" tabindex="-1" autocomplete="off"></label></div>
+          <div class="form__foot">
+            <button class="btn btn--gold" type="submit" data-submit>Gửi yêu cầu báo giá</button>
+            <p class="form__status" data-status role="status" aria-live="polite"></p>
+          </div>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer__grid">
+      <div>
+        <p class="footer__brand">Thiên Khôi <b>CDC</b></p>
+        <p class="footer__tag">{{company.tagline}}</p>
+      </div>
+      <p class="footer__sign script">Kiến tạo không gian sống</p>
+      <div class="footer__meta">
+        <a href="tel:{{company.phoneHref}}">{{company.phone}}</a>
+        <a href="mailto:{{company.email}}">{{company.email}}</a>
+        <p>© {{YEAR}} {{company.legalName}}</p>
+      </div>
+    </div>
+  </footer>
+
+  <div class="quick" aria-label="Liên hệ nhanh">
+    <a class="quick__btn" href="tel:{{company.phoneHref}}">Gọi ngay</a>
+    <a class="quick__btn quick__btn--gold" href="#bao-gia">Báo giá</a>
+  </div>
+
+  <dialog class="lightbox" data-lightbox-dialog aria-label="Xem ảnh dự án">
+    <button class="lightbox__close" type="button" data-lightbox-close aria-label="Đóng">×</button>
+    <img alt="" data-lightbox-img>
+    <p data-lightbox-cap></p>
+  </dialog>
+</body>
+</html>
