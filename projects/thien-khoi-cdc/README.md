@@ -2,7 +2,7 @@
 
 Website một trang cho **Thiên Khôi CDC** gồm:
 
-- **Hero cuộn 3D**: video fly-through 60 fps (ngoại thất → sảnh → phòng khách → bếp). Mỗi lần cuộn, video tự chạy đến cảnh tiếp theo. Chữ của từng chương bay vào/ra theo trục Z, khung cảnh nghiêng 3D theo chuột hoặc theo độ nghiêng điện thoại. Có nút xem toàn màn hình.
+- **Hero 3D tương tác, toàn màn hình**: người xem cuộn tới đâu thì máy quay đi tới đó (từ ngoài cổng → sảnh → phòng khách → bếp), video 60 fps chạy xuôi hoặc ngược theo tay cuộn. Nhìn quanh bằng chuột, vuốt ngang hoặc nghiêng điện thoại. Chữ của từng chương đặt dọc đường đi và lướt qua camera. Có nút xem toàn màn hình.
 - **Front-end** thuần HTML/CSS/JS, không cần build. Font: Cormorant Garamond, Be Vietnam Pro, Allura (đều hỗ trợ tiếng Việt).
 - **Back-end Node.js** (không cần cài thư viện, chỉ cần Node 18 trở lên):
   - Render trang từ `data/content.json` để tốt cho SEO.
@@ -39,11 +39,13 @@ Mọi thông tin nằm trong **`data/content.json`**. Lưu file là trang tự c
 Tạo bản xem trước tĩnh (không cần server): `npm run preview` → thư mục `preview-dist/`.
 
 Nội dung chữ của 5 chương trong hero nằm trong `public/index.html` (các khối `data-chap`).
-Thuộc tính `data-in` / `data-out` là vị trí cuộn (từ 0 đến 1) mà chương đó xuất hiện và biến mất.
+Thuộc tính `data-at` là vị trí của chương trên đường đi (0 = ngoài cổng, 1 = trong bếp).
+
+Chân trang lấy thông tin tập đoàn từ mục `group` trong `data/content.json`. Mục nào có `"url": ""` (chưa có đường dẫn gốc) sẽ tạm dẫn về `https://thienkhoi.com`. Biểu tượng mạng xã hội và các liên kết chính sách chỉ hiện khi đã điền `url`.
 
 ## Thay video hero (tự động)
 
-Hero phát **video thật 60 khung hình/giây**. Mỗi lần cuộn, video tự chạy mượt đến cảnh kế tiếp rồi dừng lại kèm chữ của chương đó. Cuộn ngược thì phát bản video đảo chiều. Nút **Xem toàn màn hình** mở cả video (có âm thanh) ở chế độ toàn màn hình của điện thoại.
+Hero phát **video thật 60 khung hình/giây** theo tay cuộn của người xem. Cuộn xuống là phát bản xuôi, cuộn lên là phát bản đảo chiều; tốc độ phát tỉ lệ với khoảng cách cần đi nên chuyển động luôn mượt. Nút **Xem toàn màn hình** mở cả video (có âm thanh).
 
 Đổi sang video khác chỉ cần **một lệnh** (máy cần cài `ffmpeg`):
 
@@ -56,11 +58,11 @@ Script `scripts/build-video.sh` tự làm các bước sau:
 1. Cắt góc có logo Gemini.
 2. Nội suy chuyển động lên 60 fps.
 3. Khử nhiễu, phóng lên 1080p và làm nét.
-4. Xuất bản xuôi (có âm thanh) và bản đảo chiều.
-5. Xuất bản 720p cho điện thoại.
-6. Tạo ảnh poster.
+4. Tự tìm chỗ cắt cảnh đầu tiên và chỉ lấy đoạn đi liền mạch làm hiệu ứng cuộn.
+5. Xuất bản xuôi và bản đảo chiều, mỗi bản 1080p (máy tính) và 720p (điện thoại).
+6. Xuất cả video có âm thanh cho nút xem toàn màn hình, và tạo ảnh bìa.
 
-Sau khi chạy xong, sửa `data-stops` trong `public/index.html`. Đây là các mốc thời gian (giây) mà video dừng lại cho từng chương, ví dụ `data-stops="0,3.5,8,12.5,19"` cho 5 chương (nên tránh các điểm cắt cảnh).
+Không cần sửa mốc thời gian: vị trí chương (`data-at`) tính theo tỉ lệ đường đi nên tự khớp với video mới.
 
 ## Triển khai
 

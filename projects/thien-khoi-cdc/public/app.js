@@ -1,7 +1,7 @@
 /* Thiên Khôi CDC — front-end
- * 1. Scroll-driven 3D fly-through hero: each scroll step plays real 60 fps video (forward file,
- *    or a reversed file when scrolling up) to the next chapter; parallax tilt; Z-axis chapter text
- *    Fullscreen player for the full film
+ * 1. Full-screen 3D walk-through hero: the scroll position drives real 60 fps video (forward file,
+ *    or a reversed file when scrolling up); look around by mouse, swipe or phone tilt;
+ *    chapter text placed along the walk flies past the camera. Fullscreen player for the full film
  * 2. Nav, reveal-on-scroll, 3D card tilt, lightbox
  * 3. Quote form -> POST /api/leads
  */
@@ -21,51 +21,53 @@
   if (hero && !reduceMotion) initHero(hero);
 
   function initHero(hero) {
+    const sticky = hero.querySelector('[data-look]');
     const scene = hero.querySelector('[data-scene]');
     const stage = hero.querySelector('[data-stage]');
     const fwd = hero.querySelector('[data-video="fwd"]');
     const rev = hero.querySelector('[data-video="rev"]');
-    const ambient = hero.querySelector('[data-ambient]');
-    const actx = ambient.getContext('2d', { alpha: false });
     const bar = hero.querySelector('[data-bar]');
-    const cue = hero.querySelector('[data-cue]');
-    const stops = hero.dataset.stops.split(',').map(Number); // video time (s) where each chapter rests
-    const chaps = [...hero.querySelectorAll('[data-chap]')].map((el, i) => ({ el, d: i === 0 ? 0 : -1 }));
-    const LAST = stops.length - 1;
+    const hint = hero.querySelector('[data-hint]');
+    const W = 0.075; // half-width of the stretch of the walk where a chapter's text stays in place
+    const F = 0.04; // fade length on either side
+    const chaps = [...hero.querySelectorAll('[data-chap]')].map((el) => ({ el, at: parseFloat(el.dataset.at) }));
 
-    // Phones (either orientation) stream the 720p pair, larger screens 1080p. Both are 60 fps.
-    const portrait = () => innerWidth / innerHeight < 0.85;
-    const small = portrait() || Math.max(innerWidth, innerHeight) < 1024;
+    const coarse = !finePointer;
+    const small = innerWidth / innerHeight < 0.85 || Math.max(innerWidth, innerHeight) < 1024;
     fwd.src = small ? fwd.dataset.srcSm : fwd.dataset.srcLg;
     rev.src = small ? rev.dataset.srcSm : rev.dataset.srcLg;
-    let isPortrait = portrait();
 
-    const state = {
-      time: 0, // position on the forward timeline (s)
-      target: 0, // time we are travelling to
-      chapter: 0, // chapter the scroll position asks for
-      arrived: true,
-      dir: 0, // 1 forward, -1 backward, 0 resting
-      D: stops[LAST] + 0.2, // replaced by real duration once metadata loads
-      autoplay: true, // false when the browser refuses muted playback (e.g. iOS low-power mode)
-      mx: 0, my: 0, tmx: 0, tmy: 0,
-      tilted: false,
+    /* ------------------------------------------------------------------
+     * Walk engine. The scroll position sets a target time on the walk-through.
+     * The video then *plays* toward it (forward file, or the reversed file when
+     * scrolling back up) with a speed proportional to the distance, so motion is
+     * always real 60 fps, hardware-decoded video that follows the user's scroll.
+     * ------------------------------------------------------------------ */
+    const walk = {
+      t: 0, // position on the forward timeline (s)
+      target: 0,
+      D: 20, // file duration, replaced once metadata loads
+      mode: 'play', // 'seek' when the browser refuses muted playback (stepped seeking instead)
+      rate: 1,
+      rateAt: 0,
+      seeking: false,
     };
-    let active = fwd; // the element currently on screen
+    const END = () => walk.D - 0.05;
+    const mirror = (t) => Math.max(0, walk.D - 1 / 60 - t); // forward time <-> reversed-file time
+    let active = fwd;
     let switching = false;
+    let playPending = false;
+    let preseekTimer = 0;
 
-    fwd.addEventListener('loadedmetadata', () => { state.D = fwd.duration || state.D; });
-    fwd.addEventListener('loadeddata', () => hero.classList.add('is-ready', 'is-loaded'), { once: true });
-    fwd.load();
-    rev.load();
-
-    const seek = (v, t) => new Promise((resolve) => {
-      if (Math.abs(v.currentTime - t) < 0.02) return resolve();
-      const done = () => { clearTimeout(timer); v.removeEventListener('seeked', done); resolve(); };
-      const timer = setTimeout(done, 700);
-      v.addEventListener('seeked', done);
-      v.currentTime = t;
+    fwd.addEventListener('loadedmetadata', () => {
+      walk.D = fwd.duration || walk.D;
+      if (walk.t > 0) fwd.currentTime = walk.t;
+      measure();
+      onScroll();
     });
+    fwd.addEventListener('loadeddata', () => hero.classList.add('is-ready'), { once: true });
+    fwd.addEventListener('canplaythrough', () => { rev.preload = 'auto'; }, { once: true });
+    setTimeout(() => { rev.preload = 'auto'; }, 4000);
 
     const show = (v) => {
       active = v;
@@ -73,85 +75,146 @@
       rev.classList.toggle('is-on', v === rev);
     };
 
-    // Travel to the target time: forward plays the normal file, backward plays the reversed file,
-    // so motion is always real 60 fps video in both directions.
-    async function travel() {
-      const dist = state.target - state.time;
-      if (Math.abs(dist) < 0.03) { finish(); return; }
-      const dir = Math.sign(dist);
-      const v = dir > 0 ? fwd : rev;
-      v.playbackRate = clamp(Math.abs(dist) / 2.2, 1.6, 4); // longer hops play faster
-      if (state.dir === dir && active === v && !v.paused) return; // already heading that way
-      state.dir = dir;
-      state.arrived = false;
-      if (active !== v) {
-        switching = true;
-        active.pause();
-        await seek(v, dir > 0 ? state.time : state.D - state.time);
-        show(v);
-        switching = false;
-      }
-      if (!state.autoplay) return jump();
-      try {
-        await v.play();
-      } catch {
-        state.autoplay = false;
-        jump();
-      }
-    }
+    const seek = (v, time) => new Promise((resolve) => {
+      if (Math.abs(v.currentTime - time) < 0.02) return resolve();
+      const done = () => { clearTimeout(timer); v.removeEventListener('seeked', done); resolve(); };
+      const timer = setTimeout(done, 600);
+      v.addEventListener('seeked', done);
+      v.currentTime = time;
+    });
 
-    // Fallback without autoplay: cut straight to the chapter frame
-    async function jump() {
-      await seek(fwd, state.target);
-      show(fwd);
-      state.time = state.target;
-      finish();
-    }
-
-    function finish() {
+    async function swapTo(v) {
+      switching = true;
       active.pause();
-      state.dir = 0;
-      state.arrived = true;
+      await seek(v, v === fwd ? walk.t : mirror(walk.t));
+      show(v);
+      switching = false;
     }
 
-    /* ---- scroll -> chapter ---- */
+    // While resting, line the hidden file up with the current frame so a change of direction is instant
+    const preseek = () => {
+      clearTimeout(preseekTimer);
+      preseekTimer = setTimeout(() => {
+        if (switching || !active.paused) return;
+        const other = active === fwd ? rev : fwd;
+        const want = other === fwd ? walk.t : mirror(walk.t);
+        if (Math.abs(other.currentTime - want) > 0.03) other.currentTime = want;
+      }, 150);
+    };
+
+    const toSeekMode = () => {
+      walk.mode = 'seek';
+      active.pause();
+      show(fwd);
+    };
+    // Some in-app browsers only allow playback after a tap: try again on every tap
+    const unlock = () => {
+      if (walk.mode !== 'seek') return;
+      fwd.play().then(() => {
+        fwd.pause();
+        walk.mode = 'play';
+        rev.play().then(() => rev.pause(), () => {});
+      }, () => {});
+    };
+    ['pointerup', 'keydown'].forEach((type) => addEventListener(type, unlock, { passive: true }));
+
+    function stepWalk(now) {
+      if (walk.mode === 'seek') {
+        // fallback: hop toward the target with seeks (each hop waits for the previous frame)
+        if (!walk.seeking && Math.abs(walk.target - walk.t) > 0.02) {
+          walk.seeking = true;
+          const next = walk.t + clamp(walk.target - walk.t, -0.5, 0.5);
+          seek(fwd, next).then(() => { walk.t = fwd.currentTime; walk.seeking = false; });
+        }
+        return;
+      }
+      if (switching) return;
+      walk.t = active === fwd ? fwd.currentTime : mirror(rev.currentTime);
+      const dist = walk.target - walk.t;
+      if (Math.abs(dist) < 0.025 || (dist > 0 && fwd.ended && active === fwd)) {
+        if (!active.paused) { active.pause(); preseek(); }
+        return;
+      }
+      const want = dist > 0 ? fwd : rev;
+      if (want !== active) { swapTo(want); return; }
+      // speed follows the distance: a flick of the page catches up fast, then eases into place
+      const rate = clamp(Math.abs(dist) * 2.4, 0.4, 5);
+      if (Math.abs(rate - walk.rate) > walk.rate * 0.12 && now - walk.rateAt > 120) {
+        active.playbackRate = rate;
+        walk.rate = rate;
+        walk.rateAt = now;
+      }
+      if (active.paused && !playPending) {
+        playPending = true;
+        active.play().then(() => { playPending = false; }, () => { playPending = false; toSeekMode(); });
+      }
+    }
+
+    /* ---- scroll -> target time (short rests at the gate and in the kitchen) ---- */
     let heroTop = 0;
     let heroRange = 1;
-    const measure = () => {
+    function measure() {
       heroTop = hero.getBoundingClientRect().top + scrollY;
       heroRange = Math.max(1, hero.offsetHeight - innerHeight);
-    };
-    const onScroll = () => {
+    }
+    function onScroll() {
       const p = clamp((scrollY - heroTop) / heroRange, 0, 1);
-      const chapter = Math.round(p * LAST);
-      if (cue) cue.style.opacity = String(clamp(1 - p / 0.05, 0, 1));
-      hero.classList.toggle('is-past-start', p > 0.02);
-      if (chapter === state.chapter) return;
-      state.chapter = chapter;
-      state.target = stops[chapter];
-      if (!switching) travel();
+      walk.target = clamp((p - 0.02) / 0.9, 0, 1) * END();
+    }
+
+    /* ------------------------------------------------------------------
+     * Look-around. The 16:9 scene covers the screen with some to spare; the
+     * viewer pans across it with the mouse, a horizontal swipe or by tilting
+     * the phone, so a narrow portrait screen still reaches the whole frame.
+     * ------------------------------------------------------------------ */
+    const look = { x: 0, y: 0, tx: 0, ty: 0, rx: 0, ry: 0, lastInput: -1e9 };
+    const touched = (now) => {
+      look.lastInput = now;
+      if (hint) hint.classList.remove('is-on');
     };
 
-    /* ---- 3D parallax: mouse on desktop, gyroscope on phones, gentle drift as fallback ---- */
     if (finePointer) {
       addEventListener('pointermove', (e) => {
-        state.tilted = true;
-        state.tmx = (e.clientX / innerWidth) * 2 - 1;
-        state.tmy = (e.clientY / innerHeight) * 2 - 1;
+        if (e.pointerType !== 'mouse') return;
+        look.tx = (e.clientX / innerWidth) * 2 - 1;
+        look.ty = ((e.clientY / innerHeight) * 2 - 1) * 0.6;
+        touched(performance.now());
       }, { passive: true });
-      document.addEventListener('pointerleave', () => { state.tmx = 0; state.tmy = 0; });
-    } else if ('DeviceOrientationEvent' in window) {
-      let base = null;
+    }
+
+    // horizontal drag (vertical swipes still scroll the page: touch-action: pan-y)
+    let drag = null;
+    sticky.addEventListener('pointerdown', (e) => {
+      if (e.pointerType === 'mouse') return;
+      drag = { x: e.clientX, start: look.tx };
+    });
+    sticky.addEventListener('pointermove', (e) => {
+      if (!drag || look.rx <= 0) return;
+      look.tx = clamp(drag.start - (e.clientX - drag.x) / look.rx, -1, 1); // scene follows the finger 1:1
+      touched(performance.now());
+    });
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach((type) => sticky.addEventListener(type, () => { drag = null; }));
+
+    // gyroscope: turning the phone turns the view
+    if (coarse && 'DeviceOrientationEvent' in window) {
+      let lastG = null;
+      let lastB = null;
       const onTilt = (e) => {
-        if (e.beta == null || e.gamma == null) return;
-        if (!base) base = { b: e.beta, g: e.gamma };
-        state.tilted = true;
-        state.tmx = clamp((e.gamma - base.g) / 20, -1, 1);
-        state.tmy = clamp((e.beta - base.b) / 20, -1, 1);
+        if (e.gamma == null || e.beta == null) return;
+        if (lastG !== null) {
+          const dg = e.gamma - lastG;
+          const db = e.beta - lastB;
+          if (Math.abs(dg) > 0.15 || Math.abs(db) > 0.15) {
+            look.tx = clamp(look.tx + dg / 22, -1, 1);
+            look.ty = clamp(look.ty + db / 40, -0.6, 0.6);
+            if (Math.abs(dg) > 0.6) touched(performance.now());
+          }
+        }
+        lastG = e.gamma;
+        lastB = e.beta;
       };
       const listen = () => addEventListener('deviceorientation', onTilt, { passive: true });
       if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-        // iOS asks once, on the first tap
         addEventListener('touchend', () => {
           DeviceOrientationEvent.requestPermission().then((r) => r === 'granted' && listen()).catch(() => {});
         }, { once: true });
@@ -160,86 +223,78 @@
       }
     }
 
-    /* ---- frame loop: follows the playing video, animates chapter text and the 3D camera ---- */
+    if (hint && coarse) {
+      setTimeout(() => { if (performance.now() - look.lastInput > 2500) hint.classList.add('is-on'); }, 1500);
+      setTimeout(() => hint.classList.remove('is-on'), 7500);
+    }
+
+    /* ---- layout: the scene is a 16:9 box that covers the screen, plus a margin for the tilt ---- */
+    const layout = () => {
+      const w = sticky.clientWidth;
+      const h = sticky.clientHeight;
+      const s = Math.max(w / 16, h / 9) * 1.05;
+      const sw = 16 * s;
+      const sh = 9 * s;
+      scene.style.width = `${sw}px`;
+      scene.style.height = `${sh}px`;
+      scene.style.left = `${(w - sw) / 2}px`;
+      scene.style.top = `${(h - sh) / 2}px`;
+      look.rx = (sw - w) / 2;
+      look.ry = (sh - h) / 2;
+    };
+
+    /* ---- frame loop ---- */
     let visible = true;
     new IntersectionObserver(([e]) => { visible = e.isIntersecting; }).observe(hero);
     let last = performance.now();
-    let frameNo = 0;
 
     const tick = (now) => {
       requestAnimationFrame(tick);
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
       if (!visible) return;
-      frameNo++;
 
-      if (!state.arrived && !switching) {
-        state.time = active === fwd ? fwd.currentTime : state.D - rev.currentTime;
-        const reached = state.dir > 0 ? state.time >= state.target - 0.02 : state.time <= state.target + 0.02;
-        if (reached || active.ended) { state.time = state.target; finish(); }
-        if (state.target !== stops[state.chapter]) { state.target = stops[state.chapter]; travel(); }
-      }
-      if (state.arrived && Math.abs(stops[state.chapter] - state.time) > 0.03 && !switching) {
-        state.target = stops[state.chapter];
-        travel();
-      }
+      stepWalk(now);
 
-      // chapter text: the resting chapter flies in once the video is (almost) there
-      const remaining = Math.abs(state.target - state.time) / (active.playbackRate || 1);
-      const settled = state.arrived || remaining < 0.45;
-      chaps.forEach((c, i) => {
-        const goal = i < state.chapter ? 1 : i > state.chapter ? -1 : settled ? 0 : c.d;
-        const step = dt / 0.75;
-        if (Math.abs(c.d) === 1 && goal === -c.d) c.d = goal; // skipped chapter: don't flash it past the camera
-        else c.d = c.d < goal ? Math.min(goal, c.d + step) : Math.max(goal, c.d - step);
-        const eased = Math.sign(c.d) * easeInOut(Math.abs(c.d));
+      // chapter text sits at fixed points along the walk and flies past the camera
+      const f = clamp(walk.t / END(), 0, 1);
+      chaps.forEach((c) => {
+        let d = 0;
+        if (f < c.at - W) d = -clamp((c.at - W - f) / F, 0, 1);
+        else if (f > c.at + W) d = clamp((f - c.at - W) / F, 0, 1);
+        const eased = Math.sign(d) * easeInOut(Math.abs(d));
         const o = 1 - Math.abs(eased);
         c.el.style.setProperty('--d', eased.toFixed(4));
         c.el.style.setProperty('--o', o.toFixed(3));
         c.el.classList.toggle('is-hidden', o <= 0.001);
         c.el.classList.toggle('is-active', o > 0.6);
       });
-      if (bar) bar.style.transform = `scaleX(${clamp(state.time / stops[LAST], 0, 1).toFixed(4)})`;
+      if (bar) bar.style.transform = `scaleX(${f.toFixed(4)})`;
 
-      // portrait phones: tiny blurred copy of the current frame fills the space around the 16:9 panel
-      if (isPortrait && frameNo % 6 === 0 && active.readyState >= 2) {
-        actx.drawImage(active, 0, 0, ambient.width, ambient.height);
+      // idle: the camera slowly looks left and right on its own
+      if (now - look.lastInput > 4000 && !drag) {
+        const amp = coarse ? 0.5 : 0.3;
+        look.tx = Math.sin(now / 1000 * (Math.PI * 2 / 18)) * amp;
+        look.ty = Math.cos(now / 1000 * (Math.PI * 2 / 23)) * 0.15;
       }
-
-      if (!state.tilted) {
-        // no pointer/gyro yet: slow ambient drift so the scene still reads as 3D
-        const t = now / 1000;
-        state.tmx = Math.sin(t * 0.35) * 0.45;
-        state.tmy = Math.cos(t * 0.27) * 0.3;
-      }
-      const k = 1 - Math.pow(1 - 0.07, dt * 60);
-      state.mx = lerp(state.mx, state.tmx, k);
-      state.my = lerp(state.my, state.tmy, k);
-      // full-screen scene: modest tilt within the overscan; portrait floating panel: free to tilt further
-      const amp = isPortrait ? 2 : 1;
+      const k = 1 - Math.pow(1 - (drag ? 0.35 : 0.07), dt * 60);
+      look.x = lerp(look.x, look.tx, k);
+      look.y = lerp(look.y, look.ty, k);
+      const px = -look.x * look.rx * 0.92;
+      const py = -look.y * look.ry * 0.9;
       scene.style.transform =
-        `translate3d(${(-state.mx * 14).toFixed(2)}px, ${(-state.my * 9).toFixed(2)}px, 0) ` +
-        `rotateY(${(state.mx * 3.5 * amp).toFixed(3)}deg) rotateX(${(-state.my * 2.5 * amp).toFixed(3)}deg)`;
-      stage.style.transform =
-        `translate3d(${(state.mx * 16).toFixed(2)}px, ${(state.my * 10).toFixed(2)}px, 0) ` +
-        `rotateY(${(state.mx * -3).toFixed(3)}deg) rotateX(${(state.my * 2).toFixed(3)}deg)`;
+        `translate3d(${px.toFixed(1)}px, ${py.toFixed(1)}px, 0) ` +
+        `rotateY(${(look.x * 2.2).toFixed(3)}deg) rotateX(${(-look.y * 1.6).toFixed(3)}deg)`;
+      // the text layer drifts a little the other way: depth without tilting the text
+      stage.style.transform = `translate3d(${(look.x * 8).toFixed(1)}px, ${(look.y * 5).toFixed(1)}px, 0)`;
     };
 
-    const resize = () => {
-      isPortrait = portrait();
-      ambient.width = 24;
-      ambient.height = Math.max(1, Math.round(24 * innerHeight / innerWidth));
-      measure();
-      onScroll();
-    };
+    const onResize = () => { layout(); measure(); onScroll(); };
     addEventListener('scroll', onScroll, { passive: true });
-    addEventListener('resize', resize);
-    resize();
-    // opening mid-page (reload / anchor): rest on that chapter without playing the whole way there
-    state.chapter = Math.round(clamp((scrollY - heroTop) / heroRange, 0, 1) * LAST);
-    state.time = state.target = stops[state.chapter];
-    if (state.time > 0) fwd.addEventListener('loadedmetadata', () => { fwd.currentTime = state.time; }, { once: true });
-    chaps.forEach((c, i) => { c.d = i < state.chapter ? 1 : i > state.chapter ? -1 : 0; });
+    addEventListener('resize', onResize);
+    onResize();
+    // opened mid-page (reload, anchor): start at that point of the walk instead of playing there
+    walk.t = walk.target;
     requestAnimationFrame(tick);
   }
 

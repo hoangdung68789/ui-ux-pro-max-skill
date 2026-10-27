@@ -47,42 +47,46 @@
 
   <main>
     <!-- ============ HERO: SCROLL-DRIVEN 3D FLY-THROUGH ============ -->
-    <section class="hero" id="top" data-hero data-stops="0,3.5,8,12.5,19" aria-label="Giới thiệu hành trình kiến tạo">
-      <div class="hero__sticky">
-        <canvas class="hero__ambient" data-ambient aria-hidden="true"></canvas>
+    <section class="hero" id="top" data-hero aria-label="Hành trình từ ngoài vào trong ngôi nhà">
+      <div class="hero__sticky" data-look>
         <div class="hero__scene" data-scene>
-          <video class="hero__video is-on" data-video="fwd" data-src-lg="assets/video/flythrough.mp4" data-src-sm="assets/video/flythrough-720.mp4" muted playsinline preload="auto" disablepictureinpicture aria-hidden="true"></video>
-          <video class="hero__video" data-video="rev" data-src-lg="assets/video/flythrough-rev.mp4" data-src-sm="assets/video/flythrough-720-rev.mp4" muted playsinline preload="auto" disablepictureinpicture aria-hidden="true"></video>
+          <video class="hero__video is-on" data-video="fwd" data-src-lg="assets/video/walk-1080.mp4" data-src-sm="assets/video/walk-720.mp4" poster="assets/frames/poster.webp" muted playsinline preload="auto" disablepictureinpicture disableremoteplayback aria-hidden="true"></video>
+          <video class="hero__video" data-video="rev" data-src-lg="assets/video/walk-1080-rev.mp4" data-src-sm="assets/video/walk-720-rev.mp4" poster="assets/frames/poster.webp" muted playsinline preload="metadata" disablepictureinpicture disableremoteplayback aria-hidden="true"></video>
           <picture class="hero__poster" aria-hidden="true"><img src="assets/frames/poster.webp" alt="" fetchpriority="high"></picture>
         </div>
         <div class="hero__shade" aria-hidden="true"></div>
 
+        <!-- data-at: where each chapter sits along the walk-through (0 = gate, 1 = kitchen) -->
         <div class="hero__stage" data-stage>
-          <div class="chap chap--intro" data-chap>
-            <p class="eyebrow">Thiết kế · Xây dựng · Nội thất — TP. Hồ Chí Minh</p>
+          <div class="chap chap--intro" data-chap data-at="0">
+            <p class="eyebrow">Thiết kế · Thi công · Nội thất</p>
             <h1 class="hero__title">Kiến tạo <span class="script">không gian</span><br>đáng sống</h1>
             <p class="hero__sub">Một đầu mối duy nhất từ bản vẽ đầu tiên đến ngày bàn giao chìa khóa.</p>
+            <p class="hero__cue" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="7" y="3" width="10" height="17" rx="5"/><path class="scroll-cue__dot" d="M12 7v3"/></svg>
+              Cuộn để bước vào nhà
+            </p>
           </div>
 
-          <div class="chap" data-chap>
+          <div class="chap" data-chap data-at="0.18">
             <p class="chap__lead"><span class="chap__from">từ</span> <span class="script">ý tưởng</span></p>
             <p class="chap__text">Mỗi công trình bắt đầu từ cách bạn muốn sống. Chúng tôi lắng nghe, khảo sát và phác thảo phương án kiến trúc phù hợp với khu đất và ngân sách.</p>
             <p class="chap__aside">Thiết kế kiến trúc<br>nhà phố &amp; biệt thự</p>
           </div>
 
-          <div class="chap" data-chap>
+          <div class="chap" data-chap data-at="0.40">
             <p class="chap__lead"><span class="chap__from">đến</span> <span class="script">thi công</span></p>
             <p class="chap__text">Kỹ sư giám sát thường trực, vật tư rõ nguồn gốc, tiến độ chia theo mốc và hình ảnh công trường được cập nhật định kỳ.</p>
             <p class="chap__aside">Thi công trọn gói<br>từ móng đến mái</p>
           </div>
 
-          <div class="chap" data-chap>
+          <div class="chap" data-chap data-at="0.62">
             <p class="chap__lead"><span class="chap__from">đến</span> <span class="script">nội thất</span></p>
             <p class="chap__text">Đá ốp, ánh sáng hắt, nội thất may đo — đồng bộ một phong cách từ mặt tiền vào đến từng căn phòng.</p>
             <p class="chap__aside">Thiết kế &amp; thi công<br>nội thất cao cấp</p>
           </div>
 
-          <div class="chap" data-chap>
+          <div class="chap" data-chap data-at="0.97">
             <p class="chap__lead"><span class="chap__from">và</span> <span class="script">bàn giao</span></p>
             <p class="chap__text">Nghiệm thu từng hạng mục, trao chìa khóa cùng hồ sơ hoàn công và cam kết bảo hành bằng văn bản.</p>
             <div class="chap__cta">
@@ -94,16 +98,13 @@
         </div>
 
         <div class="hero__ui" aria-hidden="true">
-          <div class="scroll-cue" data-cue>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="7" y="3" width="10" height="17" rx="5"/><path class="scroll-cue__dot" d="M12 7v3"/></svg>
-            <span>Cuộn để khám phá</span>
-          </div>
-          <div class="hero__progress">
-            <span class="hero__bar"><i data-bar></i></span>
-          </div>
+          <div class="hero__progress"><span class="hero__bar"><i data-bar></i></span></div>
+          <p class="hero__hint" data-hint>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 7 3 12l5 5M16 7l5 5-5 5M3 12h18"/></svg>
+            Vuốt ngang hoặc nghiêng máy để nhìn quanh
+          </p>
         </div>
 
-        <div class="hero__loader" aria-hidden="true">Đang tải video…</div>
         <button class="hero__fs" type="button" data-fullscreen>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
           Xem toàn màn hình
@@ -164,11 +165,9 @@
           <h2 class="title reveal">Bắt đầu <span class="script">ngôi nhà</span> của bạn</h2>
           <p class="reveal">Để lại thông tin, kỹ sư của {{company.name}} sẽ liên hệ trong giờ làm việc để tư vấn và hẹn lịch khảo sát.</p>
           <ul class="contact reveal">
-            <li><span>Điện thoại</span><a href="tel:{{company.phoneHref}}">{{company.phone}}</a></li>
-            <li><span>Zalo</span><a href="{{company.zalo}}" target="_blank" rel="noopener">Nhắn tin Zalo</a></li>
+            <li><span>Hotline</span><a href="tel:{{company.phoneHref}}">{{company.phone}}</a></li>
             <li><span>Email</span><a href="mailto:{{company.email}}">{{company.email}}</a></li>
-            <li><span>Giờ làm việc</span><p>{{company.hours}}</p></li>
-            <li><span>Khu vực</span><p>{{company.address}}</p></li>
+            <li><span>Trụ sở miền Nam</span><p>{{company.address}}</p></li>
           </ul>
         </div>
 
@@ -228,16 +227,40 @@
   </main>
 
   <footer class="footer">
-    <div class="wrap footer__grid">
-      <div>
-        <p class="footer__brand">Thiên Khôi <b>CDC</b></p>
-        <p class="footer__tag">{{company.tagline}}</p>
+    <div class="wrap">
+      <div class="footer__grid">
+        <div class="footer__company">
+          <p class="footer__brand">Thiên Khôi <b>CDC</b></p>
+          <p class="footer__member">Thương hiệu thành viên của <a href="{{group.website}}" target="_blank" rel="noopener">{{group.name}}</a></p>
+          <h2 class="footer__legal">{{group.legalName}}</h2>
+          <p class="footer__slogan">{{group.slogan}}</p>
+          <dl class="footer__facts">
+            <div><dt>Mã số thuế</dt><dd>{{group.taxCode}}</dd></div>
+            <div><dt>Hotline</dt><dd><a href="tel:{{group.hotlineHref}}">{{group.hotline}}</a></dd></div>
+            <div><dt>Email</dt><dd><a href="mailto:{{group.email}}">{{group.email}}</a></dd></div>
+          </dl>
+          <a class="btn btn--gold footer__cta" href="#bao-gia">Liên hệ hợp tác <span aria-hidden="true">→</span></a>
+        </div>
+
+        <nav class="footer__col" aria-label="Về {{group.name}}">
+          <h3>Về {{group.name}}</h3>
+          <ul class="footer__links">{{{GROUP_ABOUT}}}</ul>
+        </nav>
+
+        <nav class="footer__col" aria-label="Thương hiệu thành viên">
+          <h3>Thương hiệu thành viên</h3>
+          <ul class="footer__links">{{{GROUP_BRANDS}}}</ul>
+        </nav>
+
+        <div class="footer__col">
+          <h3>Hệ thống trụ sở</h3>
+          <ul class="footer__offices">{{{GROUP_OFFICES}}}</ul>
+        </div>
       </div>
-      <p class="footer__sign script">Kiến tạo không gian sống</p>
-      <div class="footer__meta">
-        <a href="tel:{{company.phoneHref}}">{{company.phone}}</a>
-        <a href="mailto:{{company.email}}">{{company.email}}</a>
-        <p>© {{YEAR}} {{company.legalName}}</p>
+
+      <div class="footer__bottom">
+        <p>© {{YEAR}} {{group.legalName}} · MST {{group.taxCode}}</p>
+        <div class="footer__extra">{{{GROUP_POLICIES}}}{{{GROUP_SOCIAL}}}</div>
       </div>
     </div>
   </footer>

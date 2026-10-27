@@ -96,9 +96,36 @@ const ICONS = {
   sofa: '<path d="M4 11V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3"/><path d="M2 13a2 2 0 0 1 4 0v2h12v-2a2 2 0 0 1 4 0v4a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-4ZM5 18v2M19 18v2"/>',
   hammer: '<path d="m15 12-8.5 8.5a2.1 2.1 0 0 1-3-3L12 9"/><path d="M17.6 15 22 10.6 13.4 2 9 6.4l2 2 1.4-1.4 5.2 5.2-1.4 1.4 1.4 1.4Z"/>',
   clipboard: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M9 11l2 2 4-4M9 17h6"/>',
+  pin: '<path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.5"/>',
+  facebook: '<path d="M14 8h3V4h-3a4 4 0 0 0-4 4v3H7v4h3v6h4v-6h3l1-4h-4V8Z"/>',
+  youtube: '<rect x="2.5" y="5.5" width="19" height="13" rx="3.5"/><path d="m10 9 5 3-5 3V9Z"/>',
+  tiktok: '<path d="M14 3v11.5a3.5 3.5 0 1 1-3.5-3.5M14 3c.5 2.8 2.4 4.6 5 5"/>',
 };
 const icon = (name) =>
   `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ICONS.layers}</svg>`;
+
+// Footer blocks for the parent group. A link whose `url` is still empty falls back to the
+// group website, so nothing on the page is a dead link.
+function renderGroup(g) {
+  if (!g) return {};
+  const ext = (url) => `href="${esc(url)}" target="_blank" rel="noopener"`;
+  const link = (item) => `<li><a ${ext(item.url || g.website)}${item.current ? ' aria-current="page"' : ''}>${esc(item.label)}</a></li>`;
+  return {
+    GROUP_ABOUT: g.about.map(link).join(''),
+    GROUP_BRANDS: g.brands.map(link).join(''),
+    GROUP_OFFICES: g.offices
+      .map(
+        (o) => `<li class="office">${icon('pin')}<div><h4>${esc(o.title)}</h4><p>${esc(o.address)}</p>
+          <a class="office__map" ${ext(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(o.address)}`)}>Chỉ đường <span aria-hidden="true">↗</span></a></div></li>`
+      )
+      .join(''),
+    GROUP_SOCIAL: g.social
+      .filter((x) => x.url)
+      .map((x) => `<a class="social" ${ext(x.url)} aria-label="${esc(x.label)}">${icon(x.icon)}</a>`)
+      .join(''),
+    GROUP_POLICIES: g.policies.filter((x) => x.url).map((x) => `<a ${ext(x.url)}>${esc(x.label)}</a>`).join(''),
+  };
+}
 
 function renderIndex(template, c) {
   const pad = (n) => String(n).padStart(2, '0');
@@ -131,6 +158,7 @@ function renderIndex(template, c) {
     SERVICE_OPTIONS: c.services.map((s) => `<option value="${esc(s.id)}">${esc(s.title)}</option>`).join('') + '<option value="khac">Khác / cần tư vấn</option>',
     BUDGET_OPTIONS: c.budgets.map((b) => `<option value="${esc(b.id)}">${esc(b.label)}</option>`).join(''),
     YEAR: String(new Date().getFullYear()),
+    ...renderGroup(c.group),
     JSONLD: JSON.stringify({
       '@context': 'https://schema.org',
       '@type': 'GeneralContractor',
@@ -144,6 +172,7 @@ function renderIndex(template, c) {
     }).replace(/</g, '\\u003c'),
   };
   for (const [k, v] of Object.entries(c.company)) blocks[`company.${k}`] = esc(v);
+  for (const [k, v] of Object.entries(c.group || {})) if (typeof v === 'string') blocks[`group.${k}`] = esc(v);
   // {{{RAW}}} for pre-rendered HTML, {{escaped}} for company fields
   return template
     .replace(/\{\{\{\s*([\w.]+)\s*\}\}\}/g, (m, k) => (k in blocks ? blocks[k] : m))

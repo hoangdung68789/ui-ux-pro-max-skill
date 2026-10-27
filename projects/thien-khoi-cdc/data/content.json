@@ -1,16 +1,55 @@
 {
   "company": {
     "name": "Thiên Khôi CDC",
-    "legalName": "Công ty Thiên Khôi CDC",
+    "legalName": "Công ty Cổ phần Tập đoàn Thiên Khôi",
     "tagline": "Thiết kế · Xây dựng · Hoàn thiện nội thất",
     "description": "Thiên Khôi CDC thiết kế và thi công nhà phố, biệt thự, nội thất trọn gói tại TP. Hồ Chí Minh — một đầu mối duy nhất từ bản vẽ đến ngày bàn giao chìa khóa.",
-    "phone": "0900 000 000",
-    "phoneHref": "+84900000000",
-    "zalo": "https://zalo.me/84900000000",
-    "email": "lienhe@thienkhoicdc.vn",
-    "address": "TP. Hồ Chí Minh",
-    "hours": "Thứ 2 – Thứ 7 · 8:00 – 18:00",
+    "phone": "0888.247.888",
+    "phoneHref": "+84888247888",
+    "email": "lienhe.mb@thienkhoi.com",
+    "address": "DD1 – DD1A Bạch Mã, phường Hòa Hưng, TP Hồ Chí Minh",
     "siteUrl": "https://thienkhoicdc.vn"
+  },
+  "group": {
+    "name": "Thiên Khôi Group",
+    "legalName": "Công ty Cổ phần Tập đoàn Thiên Khôi",
+    "slogan": "Tiên phong Công nghệ Môi giới",
+    "taxCode": "0109109326",
+    "hotline": "0888.247.888",
+    "hotlineHref": "+84888247888",
+    "email": "lienhe.mb@thienkhoi.com",
+    "website": "https://thienkhoi.com",
+    "_links": "url rỗng = chưa có đường dẫn gốc từ thienkhoi.com; khi đó trang tạm dẫn về website tập đoàn",
+    "about": [
+      { "label": "Giới thiệu", "url": "" },
+      { "label": "Trách nhiệm xã hội", "url": "" },
+      { "label": "Tuyển dụng", "url": "" },
+      { "label": "Tin tức & Sự kiện", "url": "" },
+      { "label": "Danh sách các Trụ sở", "url": "" }
+    ],
+    "brands": [
+      { "label": "Thiên Khôi Real Estate", "url": "" },
+      { "label": "Thiên Khôi Invest", "url": "" },
+      { "label": "Thiên Khôi CDC", "url": "https://thienkhoi.com/thuong-hieu/thien-khoi-cdc", "current": true },
+      { "label": "Thiên Khôi Tech", "url": "" },
+      { "label": "Thiên Khôi Travel", "url": "" },
+      { "label": "Thiên Khôi Media", "url": "" },
+      { "label": "Thiên Khôi Valuation", "url": "" }
+    ],
+    "offices": [
+      { "title": "Hội sở chính", "address": "Tầng 2, Tòa nhà Mipec, số 229 Tây Sơn, phường Kim Liên, Hà Nội" },
+      { "title": "Trụ sở miền Trung", "address": "169 - 171 Nguyễn Văn Linh, phường Hải Châu, TP Đà Nẵng" },
+      { "title": "Trụ sở miền Nam", "address": "DD1 – DD1A Bạch Mã, phường Hòa Hưng, TP Hồ Chí Minh" }
+    ],
+    "social": [
+      { "label": "Facebook", "icon": "facebook", "url": "" },
+      { "label": "YouTube", "icon": "youtube", "url": "" },
+      { "label": "TikTok", "icon": "tiktok", "url": "" }
+    ],
+    "policies": [
+      { "label": "Chính sách bảo mật", "url": "" },
+      { "label": "Trang truyền thông chính thức", "url": "" }
+    ]
   },
   "commitments": [
     { "title": "Báo giá minh bạch", "text": "Bảng dự toán chi tiết theo từng hạng mục, vật tư ghi rõ chủng loại và thương hiệu trước khi ký hợp đồng." },
