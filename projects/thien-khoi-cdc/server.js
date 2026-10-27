@@ -257,7 +257,7 @@ function readBody(req) {
     req.on('data', (chunk) => {
       size += chunk.length;
       if (size > MAX_BODY) {
-        reject(Object.assign(new Error('Payload too large'), { status: 413 }));
+        reject(Object.assign(new Error('Dữ liệu gửi lên quá lớn.'), { status: 413 }));
         req.destroy();
       } else chunks.push(chunk);
     });
@@ -265,7 +265,7 @@ function readBody(req) {
       try {
         resolve(chunks.length ? JSON.parse(Buffer.concat(chunks).toString('utf8')) : {});
       } catch {
-        reject(Object.assign(new Error('Invalid JSON'), { status: 400 }));
+        reject(Object.assign(new Error('Dữ liệu không hợp lệ.'), { status: 400 }));
       }
     });
     req.on('error', reject);
@@ -294,10 +294,10 @@ async function serveStatic(req, res, pathname) {
   try {
     rel = decodeURIComponent(pathname);
   } catch {
-    return send(res, 400, 'Bad request');
+    return send(res, 400, 'Yêu cầu không hợp lệ');
   }
   const file = path.normalize(path.join(PUBLIC_DIR, rel));
-  if (!file.startsWith(PUBLIC_DIR + path.sep)) return send(res, 403, 'Forbidden');
+  if (!file.startsWith(PUBLIC_DIR + path.sep)) return send(res, 403, 'Không có quyền truy cập');
   let stat;
   try {
     stat = await fsp.stat(file);
@@ -397,12 +397,12 @@ async function handle(req, res) {
       });
       return removed ? json(res, 200, { ok: true }) : json(res, 404, { ok: false, message: 'Không tìm thấy.' });
     }
-    return json(res, 405, { ok: false, message: 'Method not allowed' });
+    return json(res, 405, { ok: false, message: 'Phương thức không được hỗ trợ.' });
   }
 
-  if (pathname.startsWith('/api/')) return json(res, 404, { ok: false, message: 'Not found' });
+  if (pathname.startsWith('/api/')) return json(res, 404, { ok: false, message: 'Không tìm thấy.' });
 
-  if (method !== 'GET' && method !== 'HEAD') return send(res, 405, 'Method not allowed');
+  if (method !== 'GET' && method !== 'HEAD') return send(res, 405, 'Phương thức không được hỗ trợ');
 
   if (pathname === '/' || pathname === '/index.html') {
     const { html } = await getContent();

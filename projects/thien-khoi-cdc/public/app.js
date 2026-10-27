@@ -36,7 +36,7 @@
 
     const TOTAL = parseInt(hero.dataset.frames, 10);
     const size = Math.min(innerWidth, innerHeight * 16 / 9) * Math.min(devicePixelRatio || 1, 2) > 1000 ? 'lg' : 'sm';
-    const src = (i) => `/assets/frames/${size}/f${String(i + 1).padStart(3, '0')}.webp`;
+    const src = (i) => `assets/frames/${size}/f${String(i + 1).padStart(3, '0')}.webp`;
     const frames = new Array(TOTAL);
     let loadedCount = 0;
 
@@ -324,6 +324,13 @@
     const errs = clientValidate(data);
     showErrors(errs);
     if (Object.keys(errs).length) return;
+
+    // Static preview build has no server: confirm the form works without sending anything
+    if (form.dataset.preview !== undefined) {
+      status.classList.add('is-ok');
+      status.textContent = 'Bản xem trước: thông tin hợp lệ. Khi chạy trên máy chủ thật, yêu cầu sẽ được lưu vào trang quản trị.';
+      return;
+    }
 
     submit.disabled = true;
     submit.textContent = 'Đang gửi…';

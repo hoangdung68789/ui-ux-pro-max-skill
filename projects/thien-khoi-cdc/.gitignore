@@ -2,3 +2,4 @@
 data/leads.json
 data/*.tmp
 node_modules/
+preview-dist/

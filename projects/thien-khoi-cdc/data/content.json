@@ -34,12 +34,12 @@
     { "title": "Bàn giao & bảo hành", "text": "Nghiệm thu từng hạng mục, bàn giao hồ sơ hoàn công và đồng hành bảo hành." }
   ],
   "projects": [
-    { "image": "/assets/img/p1.webp", "title": "Biệt thự đá đen", "category": "Kiến trúc", "text": "Khối kiến trúc đá tối, đèn LED hắt tạo chiều sâu cho mặt tiền về đêm." },
-    { "image": "/assets/img/p3.webp", "title": "Phòng khách thông tầng", "category": "Nội thất", "text": "Vách kính lớn, đá vân tối, đèn vòng treo và lò sưởi âm tường." },
-    { "image": "/assets/img/p4.webp", "title": "Không gian mở hướng hồ bơi", "category": "Nội thất", "text": "Sofa tông kem, cây ô liu và cầu thang bậc treo tạo điểm nhấn." },
-    { "image": "/assets/img/p5.webp", "title": "Bếp đảo đá marble", "category": "Hoàn thiện", "text": "Đảo bếp đá đen vân trắng, LED chân tủ và đèn thả tối giản." },
-    { "image": "/assets/img/p6.webp", "title": "Phòng sinh hoạt sáng", "category": "Nội thất", "text": "Sàn đá sáng màu, rèm voan và ánh sáng tự nhiên tràn ngập." },
-    { "image": "/assets/img/p8.webp", "title": "Bếp – ăn liên thông", "category": "Hoàn thiện", "text": "Hệ tủ bếp kịch trần, đảo bếp kết nối trực tiếp với sân vườn." }
+    { "image": "assets/img/p1.webp", "title": "Biệt thự đá đen", "category": "Kiến trúc", "text": "Khối kiến trúc đá tối, đèn LED hắt tạo chiều sâu cho mặt tiền về đêm." },
+    { "image": "assets/img/p3.webp", "title": "Phòng khách thông tầng", "category": "Nội thất", "text": "Vách kính lớn, đá vân tối, đèn vòng treo và lò sưởi âm tường." },
+    { "image": "assets/img/p4.webp", "title": "Không gian mở hướng hồ bơi", "category": "Nội thất", "text": "Sofa tông kem, cây ô liu và cầu thang bậc treo tạo điểm nhấn." },
+    { "image": "assets/img/p5.webp", "title": "Bếp đảo đá marble", "category": "Hoàn thiện", "text": "Đảo bếp đá đen vân trắng, LED chân tủ và đèn thả tối giản." },
+    { "image": "assets/img/p6.webp", "title": "Phòng sinh hoạt sáng", "category": "Nội thất", "text": "Sàn đá sáng màu, rèm voan và ánh sáng tự nhiên tràn ngập." },
+    { "image": "assets/img/p8.webp", "title": "Bếp – ăn liên thông", "category": "Hoàn thiện", "text": "Hệ tủ bếp kịch trần, đảo bếp kết nối trực tiếp với sân vườn." }
   ],
   "budgets": [
     { "id": "duoi-1ty", "label": "Dưới 1 tỷ" },

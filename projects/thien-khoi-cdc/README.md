@@ -36,6 +36,8 @@ Mọi thông tin nằm trong **`data/content.json`**. Lưu file là trang tự c
 
 > ⚠️ Số điện thoại `0900 000 000`, email và tên miền hiện là **giá trị mẫu**. Cần thay bằng thông tin thật trước khi chạy chính thức.
 
+Tạo bản xem trước tĩnh (không cần server): `node scripts/build-preview.js` → thư mục `preview-dist/`.
+
 Nội dung chữ của 5 chương trong hero nằm trong `public/index.html` (các khối `data-chap`).
 Thuộc tính `data-in` / `data-out` là vị trí cuộn (từ 0 đến 1) mà chương đó xuất hiện và biến mất.
 
