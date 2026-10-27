@@ -35,9 +35,18 @@ test('renders index with content and no leftover placeholders', async () => {
 
 test('static files and traversal guard', async () => {
   assert.equal((await fetch(base + '/app.js')).status, 200);
-  assert.equal((await fetch(base + '/assets/frames/hd/f300.webp')).status, 200);
+  assert.equal((await fetch(base + '/assets/frames/poster.webp')).status, 200);
   assert.notEqual((await fetch(base + '/..%2Fserver.js')).status, 200);
   assert.equal((await fetch(base + '/nope')).status, 404);
+});
+
+test('byte ranges for video', async () => {
+  const res = await fetch(base + '/assets/frames/poster.webp', { headers: { Range: 'bytes=0-99' } });
+  assert.equal(res.status, 206);
+  assert.match(res.headers.get('content-range'), /^bytes 0-99\/\d+$/);
+  assert.equal((await res.arrayBuffer()).byteLength, 100);
+  const bad = await fetch(base + '/assets/frames/poster.webp', { headers: { Range: 'bytes=999999999-' } });
+  assert.equal(bad.status, 416);
 });
 
 test('lead validation', async () => {

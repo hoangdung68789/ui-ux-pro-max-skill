@@ -73,7 +73,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .btn:hover { border-color: var(--gold); color: var(--gold-hi); }
 .btn--gold { background: var(--gold); border-color: var(--gold); color: var(--on-gold); }
 .btn--gold:hover { background: var(--gold-hi); border-color: var(--gold-hi); color: var(--on-gold); }
-.btn--ghost { backdrop-filter: blur(6px); background: rgba(13, 12, 10, 0.25); }
+/* no backdrop-filter: re-blurring a playing video every frame is what makes phones stutter */
+.btn--ghost { background: rgba(13, 12, 10, 0.45); }
 .btn[disabled] { opacity: .6; cursor: progress; }
 
 /* ---------------- Nav ---------------- */
@@ -117,13 +118,15 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .mobile-menu a { padding: 16px 0; border-bottom: 1px solid var(--line); font: 400 28px/1.1 var(--f-display); }
 
 /* ---------------- HERO (scroll-driven 3D) ---------------- */
-.hero { position: relative; height: 620vh; background: #000; margin-top: calc(env(safe-area-inset-top, 0px) * -1); }
+.hero { position: relative; height: 520vh; background: #000; margin-top: calc(env(safe-area-inset-top, 0px) * -1); }
 .hero__sticky { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; perspective: 1400px; }
 .hero__scene {
   position: absolute; inset: -3%; /* small overscan so the 3D tilt never reveals an edge */
   transform-style: preserve-3d; will-change: transform;
 }
-.hero__canvas, .hero__poster { position: absolute; inset: 0; width: 100%; height: 100%; }
+.hero__video, .hero__poster { position: absolute; inset: 0; width: 100%; height: 100%; }
+.hero__video { object-fit: cover; opacity: 0; background: #000; }
+.hero__video.is-on { opacity: 1; }
 .hero__poster { transition: opacity .6s; }
 .hero__poster img { width: 100%; height: 100%; object-fit: cover; }
 .hero__ambient { display: none; }
@@ -139,6 +142,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
     border-radius: 4px; overflow: hidden;
     box-shadow: 0 30px 60px -20px rgba(0, 0, 0, .8), 0 0 0 1px rgba(227, 199, 146, .18);
   }
+  .hero .hero__fs { bottom: auto; top: calc(24vh + 56.25vw - 50px); right: 10px; min-height: 38px; padding: 0 14px; font-size: 10px; }
 }
 .hero.is-ready .hero__poster { opacity: 0; }
 .hero__shade {
@@ -216,11 +220,30 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .hero__bar { position: relative; width: clamp(80px, 16vw, 220px); height: 1px; background: var(--line-strong); overflow: hidden; }
 .hero__bar i { position: absolute; inset: 0; background: var(--gold-hi); transform-origin: left; transform: scaleX(0); }
 .hero__loader {
-  position: absolute; right: var(--gutter); bottom: 34px;
+  position: absolute; right: var(--gutter); top: calc(96px + env(safe-area-inset-top, 0px));
   font: 400 12px/1 var(--f-text); letter-spacing: .2em; color: var(--muted);
   transition: opacity .5s;
 }
 .hero.is-loaded .hero__loader { opacity: 0; }
+.hero__fs {
+  position: absolute; right: var(--gutter); bottom: 26px; z-index: 2;
+  display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 18px;
+  border: 1px solid var(--line-strong); border-radius: 999px; background: rgba(13, 12, 10, .5);
+  font: 500 11px/1 var(--f-text); letter-spacing: .18em; text-transform: uppercase; cursor: pointer;
+  transition: border-color .25s, color .25s;
+}
+.hero__fs svg { width: 16px; height: 16px; color: var(--gold-hi); }
+.hero__fs:hover { border-color: var(--gold); color: var(--gold-hi); }
+
+/* fullscreen film player */
+.player { position: fixed; inset: 0; z-index: 100; background: #000; display: grid; place-items: center; }
+.player video { width: 100%; height: 100%; object-fit: contain; background: #000; }
+.player__close {
+  position: absolute; top: calc(14px + env(safe-area-inset-top, 0px)); right: calc(14px + env(safe-area-inset-right, 0px));
+  width: 48px; height: 48px; border-radius: 50%; border: 1px solid var(--line-strong);
+  background: rgba(13, 12, 10, .6); font-size: 26px; line-height: 1; cursor: pointer;
+}
+.player__close:hover { border-color: var(--gold); color: var(--gold-hi); }
 
 /* ---------------- Sections ---------------- */
 .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 var(--gutter); }
@@ -397,7 +420,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
   }
   .quick__btn {
     min-height: 50px; display: flex; align-items: center; justify-content: center;
-    background: rgba(20, 18, 15, .92); backdrop-filter: blur(10px); border: 1px solid var(--line-strong);
+    background: rgba(20, 18, 15, .95); border: 1px solid var(--line-strong);
     font-size: 12px; letter-spacing: .2em; text-transform: uppercase;
   }
   .quick__btn--gold { background: var(--gold); color: var(--on-gold); border-color: var(--gold); font-weight: 500; }
@@ -418,13 +441,14 @@ button, input, select, textarea { font: inherit; color: inherit; }
   .chap__aside { font-size: 17px; padding-right: 18px; }
   .hero__progress { bottom: 22px; }
   .scroll-cue { bottom: 16px; }
+  .hero__fs { bottom: 12px; min-height: 38px; }
 }
 
 /* Reduced motion: static hero with the intro message, no scroll-jacking */
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   .hero { height: 100vh; height: 100svh; }
-  .hero__canvas, .hero__progress, .scroll-cue, .hero__loader { display: none; }
+  .hero__video, .hero__progress, .scroll-cue, .hero__loader { display: none; }
   .hero.is-ready .hero__poster { opacity: 1; }
   .chap { display: none; }
   .chap--intro { display: flex; opacity: 1; transform: none; }

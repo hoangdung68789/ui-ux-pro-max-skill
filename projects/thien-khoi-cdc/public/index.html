@@ -47,41 +47,42 @@
 
   <main>
     <!-- ============ HERO: SCROLL-DRIVEN 3D FLY-THROUGH ============ -->
-    <section class="hero" id="top" data-hero data-frames-hd="300" data-frames-md="180" aria-label="Giới thiệu hành trình kiến tạo">
+    <section class="hero" id="top" data-hero data-stops="0,3.5,8,12.5,19" aria-label="Giới thiệu hành trình kiến tạo">
       <div class="hero__sticky">
         <canvas class="hero__ambient" data-ambient aria-hidden="true"></canvas>
         <div class="hero__scene" data-scene>
-          <canvas class="hero__canvas" data-canvas aria-hidden="true"></canvas>
+          <video class="hero__video is-on" data-video="fwd" data-src-lg="assets/video/flythrough.mp4" data-src-sm="assets/video/flythrough-720.mp4" muted playsinline preload="auto" disablepictureinpicture aria-hidden="true"></video>
+          <video class="hero__video" data-video="rev" data-src-lg="assets/video/flythrough-rev.mp4" data-src-sm="assets/video/flythrough-720-rev.mp4" muted playsinline preload="auto" disablepictureinpicture aria-hidden="true"></video>
           <picture class="hero__poster" aria-hidden="true"><img src="assets/frames/poster.webp" alt="" fetchpriority="high"></picture>
         </div>
         <div class="hero__shade" aria-hidden="true"></div>
 
         <div class="hero__stage" data-stage>
-          <div class="chap chap--intro" data-chap data-in="0" data-out="0.12">
+          <div class="chap chap--intro" data-chap>
             <p class="eyebrow">Thiết kế · Xây dựng · Nội thất — TP. Hồ Chí Minh</p>
             <h1 class="hero__title">Kiến tạo <span class="script">không gian</span><br>đáng sống</h1>
             <p class="hero__sub">Một đầu mối duy nhất từ bản vẽ đầu tiên đến ngày bàn giao chìa khóa.</p>
           </div>
 
-          <div class="chap" data-chap data-in="0.18" data-out="0.38">
+          <div class="chap" data-chap>
             <p class="chap__lead"><span class="chap__from">từ</span> <span class="script">ý tưởng</span></p>
             <p class="chap__text">Mỗi công trình bắt đầu từ cách bạn muốn sống. Chúng tôi lắng nghe, khảo sát và phác thảo phương án kiến trúc phù hợp với khu đất và ngân sách.</p>
             <p class="chap__aside">Thiết kế kiến trúc<br>nhà phố &amp; biệt thự</p>
           </div>
 
-          <div class="chap" data-chap data-in="0.40" data-out="0.58">
+          <div class="chap" data-chap>
             <p class="chap__lead"><span class="chap__from">đến</span> <span class="script">thi công</span></p>
             <p class="chap__text">Kỹ sư giám sát thường trực, vật tư rõ nguồn gốc, tiến độ chia theo mốc và hình ảnh công trường được cập nhật định kỳ.</p>
             <p class="chap__aside">Thi công trọn gói<br>từ móng đến mái</p>
           </div>
 
-          <div class="chap" data-chap data-in="0.60" data-out="0.78">
+          <div class="chap" data-chap>
             <p class="chap__lead"><span class="chap__from">đến</span> <span class="script">nội thất</span></p>
             <p class="chap__text">Đá ốp, ánh sáng hắt, nội thất may đo — đồng bộ một phong cách từ mặt tiền vào đến từng căn phòng.</p>
             <p class="chap__aside">Thiết kế &amp; thi công<br>nội thất cao cấp</p>
           </div>
 
-          <div class="chap" data-chap data-in="0.80" data-out="1.01">
+          <div class="chap" data-chap>
             <p class="chap__lead"><span class="chap__from">và</span> <span class="script">bàn giao</span></p>
             <p class="chap__text">Nghiệm thu từng hạng mục, trao chìa khóa cùng hồ sơ hoàn công và cam kết bảo hành bằng văn bản.</p>
             <div class="chap__cta">
@@ -102,7 +103,11 @@
           </div>
         </div>
 
-        <div class="hero__loader" data-loader aria-hidden="true"><span data-loader-text>0%</span></div>
+        <div class="hero__loader" aria-hidden="true">Đang tải video…</div>
+        <button class="hero__fs" type="button" data-fullscreen>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+          Xem toàn màn hình
+        </button>
       </div>
     </section>
 
@@ -240,6 +245,11 @@
   <div class="quick" aria-label="Liên hệ nhanh">
     <a class="quick__btn" href="tel:{{company.phoneHref}}">Gọi ngay</a>
     <a class="quick__btn quick__btn--gold" href="#bao-gia">Báo giá</a>
+  </div>
+
+  <div class="player" data-player hidden>
+    <video controls playsinline preload="none" data-src="assets/video/flythrough.mp4" poster="assets/frames/poster.webp"></video>
+    <button class="player__close" type="button" data-player-close aria-label="Đóng video">×</button>
   </div>
 
   <dialog class="lightbox" data-lightbox-dialog aria-label="Xem ảnh dự án">

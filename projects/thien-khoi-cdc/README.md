@@ -2,7 +2,7 @@
 
 Website một trang cho **Thiên Khôi CDC** gồm:
 
-- **Hero cuộn 3D**: video fly-through (ngoại thất → sảnh → phòng khách → bếp) được tua theo thanh cuộn. Các chương chữ bay vào/ra theo trục Z, khung cảnh nghiêng 3D theo chuột, ảnh chuyển mượt giữa các khung hình.
+- **Hero cuộn 3D**: video fly-through 60 fps (ngoại thất → sảnh → phòng khách → bếp). Mỗi lần cuộn, video tự chạy đến cảnh tiếp theo. Chữ của từng chương bay vào/ra theo trục Z, khung cảnh nghiêng 3D theo chuột hoặc theo độ nghiêng điện thoại. Có nút xem toàn màn hình.
 - **Front-end** thuần HTML/CSS/JS, không cần build. Font: Cormorant Garamond, Be Vietnam Pro, Allura (đều hỗ trợ tiếng Việt).
 - **Back-end Node.js** (không cần cài thư viện, chỉ cần Node 18 trở lên):
   - Render trang từ `data/content.json` để tốt cho SEO.
@@ -36,23 +36,31 @@ Mọi thông tin nằm trong **`data/content.json`**. Lưu file là trang tự c
 
 > ⚠️ Số điện thoại `0900 000 000`, email và tên miền hiện là **giá trị mẫu**. Cần thay bằng thông tin thật trước khi chạy chính thức.
 
-Tạo bản xem trước tĩnh (không cần server): `node scripts/build-preview.js` → thư mục `preview-dist/`.
+Tạo bản xem trước tĩnh (không cần server): `npm run preview` → thư mục `preview-dist/`.
 
 Nội dung chữ của 5 chương trong hero nằm trong `public/index.html` (các khối `data-chap`).
 Thuộc tính `data-in` / `data-out` là vị trí cuộn (từ 0 đến 1) mà chương đó xuất hiện và biến mất.
 
-## Thay video hero
+## Thay video hero (tự động)
 
-Hero dùng chuỗi ảnh WebP để tua mượt, không phát trực tiếp video. Muốn đổi sang video khác:
+Hero phát **video thật 60 khung hình/giây**. Mỗi lần cuộn, video tự chạy mượt đến cảnh kế tiếp rồi dừng lại kèm chữ của chương đó. Cuộn ngược thì phát bản video đảo chiều. Nút **Xem toàn màn hình** mở cả video (có âm thanh) ở chế độ toàn màn hình của điện thoại.
+
+Đổi sang video khác chỉ cần **một lệnh** (máy cần cài `ffmpeg`):
 
 ```bash
-V=video-moi.mp4
-ffmpeg -i "$V" -vf "fps=10,crop=1120:630:0:0,hqdn3d=1.5:1.5:3:3,scale=2560:1440:flags=lanczos,unsharp=5:5:0.9:5:5:0.0,cas=0.5" -c:v libwebp -quality 80 public/assets/frames/hd/f%03d.webp
-ffmpeg -i "$V" -vf "fps=6,crop=1120:630:0:0,hqdn3d=1.5:1.5:3:3,scale=1280:720:flags=lanczos,unsharp=5:5:0.7:5:5:0.0,cas=0.5" -c:v libwebp -quality 80 public/assets/frames/md/f%03d.webp
+npm run video -- duong-dan/video-moi.mp4
+# Video không có logo/watermark cần cắt: CROP=none npm run video -- video-moi.mp4
 ```
 
-Sau đó sửa `data-frames-hd` / `data-frames-md` trong `public/index.html` thành số ảnh vừa tạo.
-Video mẫu hiện tại đã được cắt khung để bỏ logo Gemini ở góc phải.
+Script `scripts/build-video.sh` tự làm các bước sau:
+1. Cắt góc có logo Gemini.
+2. Nội suy chuyển động lên 60 fps.
+3. Khử nhiễu, phóng lên 1080p và làm nét.
+4. Xuất bản xuôi (có âm thanh) và bản đảo chiều.
+5. Xuất bản 720p cho điện thoại.
+6. Tạo ảnh poster.
+
+Sau khi chạy xong, sửa `data-stops` trong `public/index.html`. Đây là các mốc thời gian (giây) mà video dừng lại cho từng chương, ví dụ `data-stops="0,3.5,8,12.5,19"` cho 5 chương (nên tránh các điểm cắt cảnh).
 
 ## Triển khai
 
@@ -68,6 +76,7 @@ public/index.html    giao diện (template)
 public/styles.css    thiết kế
 public/app.js        hero cuộn 3D, hiệu ứng, form
 public/admin.*       trang quản trị lead
-public/assets/       khung hình hero, ảnh dự án, favicon
+public/assets/       video hero, poster, ảnh dự án, favicon
+scripts/             build-video.sh (xử lý video tự động), build-preview.js
 test/                kiểm thử API
 ```

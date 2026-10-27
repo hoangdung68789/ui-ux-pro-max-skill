@@ -1,6 +1,7 @@
 /* Thiên Khôi CDC — front-end
- * 1. Scroll-driven 3D fly-through hero (image sequence on canvas, cross-faded sub-frames,
- *    mouse parallax tilt, chapters entering/leaving along the Z axis)
+ * 1. Scroll-driven 3D fly-through hero: each scroll step plays real 60 fps video (forward file,
+ *    or a reversed file when scrolling up) to the next chapter; parallax tilt; Z-axis chapter text
+ *    Fullscreen player for the full film
  * 2. Nav, reveal-on-scroll, 3D card tilt, lightbox
  * 3. Quote form -> POST /api/leads
  */
@@ -20,171 +21,115 @@
   if (hero && !reduceMotion) initHero(hero);
 
   function initHero(hero) {
-    const canvas = hero.querySelector('[data-canvas]');
-    const ctx = canvas.getContext('2d', { alpha: false });
-    const ambient = hero.querySelector('[data-ambient]');
-    const actx = ambient.getContext('2d', { alpha: false });
     const scene = hero.querySelector('[data-scene]');
     const stage = hero.querySelector('[data-stage]');
-    const chaps = [...hero.querySelectorAll('[data-chap]')].map((el) => ({
-      el,
-      in: parseFloat(el.dataset.in),
-      out: parseFloat(el.dataset.out),
-    }));
+    const fwd = hero.querySelector('[data-video="fwd"]');
+    const rev = hero.querySelector('[data-video="rev"]');
+    const ambient = hero.querySelector('[data-ambient]');
+    const actx = ambient.getContext('2d', { alpha: false });
     const bar = hero.querySelector('[data-bar]');
     const cue = hero.querySelector('[data-cue]');
-    const loaderText = hero.querySelector('[data-loader-text]');
+    const stops = hero.dataset.stops.split(',').map(Number); // video time (s) where each chapter rests
+    const chaps = [...hero.querySelectorAll('[data-chap]')].map((el, i) => ({ el, d: i === 0 ? 0 : -1 }));
+    const LAST = stops.length - 1;
 
-    // Portrait phones show the full 16:9 frame in a floating panel (CSS); phones and small screens
-    // (portrait or landscape) get the 1280px set, larger screens the 2560px set
+    // Phones (either orientation) stream the 720p pair, larger screens 1080p. Both are 60 fps.
     const portrait = () => innerWidth / innerHeight < 0.85;
-    const pickSet = () => (portrait() || Math.max(innerWidth, innerHeight) < 1024 ? 'md' : 'hd');
-    let set = pickSet();
-    let TOTAL = parseInt(hero.dataset[set === 'md' ? 'framesMd' : 'framesHd'], 10);
-    const src = (i) => `assets/frames/${set}/f${String(i + 1).padStart(3, '0')}.webp`;
-    let frames = new Array(TOTAL);
-    let loadedCount = 0;
-    let generation = 0; // bumps when the frame set changes (phone rotated)
-
-    const state = {
-      target: 0, // scroll progress 0..1
-      progress: 0, // smoothed progress
-      mx: 0, my: 0, tmx: 0, tmy: 0, // pointer / device-tilt parallax (smoothed / target)
-      tilted: false, // true once real input (mouse or gyroscope) drives the tilt
-      dirty: true,
-      w: 0, h: 0,
-    };
-
-    /* ---- progressive preloading: coarse-to-fine so scrubbing works immediately ---- */
-    let order = [];
-    let cursor = 0;
-    const buildOrder = () => {
-      order = [];
-      cursor = 0;
-      const seen = new Set();
-      for (const step of [16, 8, 4, 2, 1]) {
-        for (let i = 0; i < TOTAL; i += step) if (!seen.has(i)) { seen.add(i); order.push(i); }
-      }
-    };
-    buildOrder();
-    const loadNext = () => {
-      if (cursor >= order.length) return;
-      const i = order[cursor++];
-      const gen = generation;
-      const img = new Image();
-      img.decoding = 'async';
-      img.onload = () => {
-        const done = () => {
-          if (gen !== generation) return;
-          frames[i] = img;
-          loadedCount++;
-          if (loaderText) loaderText.textContent = `${Math.round((loadedCount / TOTAL) * 100)}%`;
-          if (i === 0) hero.classList.add('is-ready');
-          if (loadedCount === TOTAL) hero.classList.add('is-loaded');
-          state.dirty = true;
-          loadNext();
-        };
-        img.decode ? img.decode().then(done, done) : done();
-      };
-      img.onerror = loadNext;
-      img.src = src(i);
-    };
-    const startLoading = () => { for (let k = 0; k < 6; k++) loadNext(); };
-    startLoading();
-    const maybeSwapSet = () => {
-      const next = pickSet();
-      if (next === set) return;
-      set = next;
-      generation++;
-      TOTAL = parseInt(hero.dataset[set === 'md' ? 'framesMd' : 'framesHd'], 10);
-      const old = frames;
-      frames = new Array(TOTAL);
-      loadedCount = 0;
-      hero.classList.remove('is-loaded');
-      buildOrder();
-      startLoading();
-      // keep showing the old set until the new one has its first frames
-      const keep = old.filter(Boolean);
-      if (keep.length) fallback = keep;
-    };
-    let fallback = null;
+    const small = portrait() || Math.max(innerWidth, innerHeight) < 1024;
+    fwd.src = small ? fwd.dataset.srcSm : fwd.dataset.srcLg;
+    rev.src = small ? rev.dataset.srcSm : rev.dataset.srcLg;
     let isPortrait = portrait();
 
-    const nearest = (i) => {
-      if (frames[i]) return frames[i];
-      for (let d = 1; d < TOTAL; d++) {
-        if (frames[i - d]) return frames[i - d];
-        if (frames[i + d]) return frames[i + d];
+    const state = {
+      time: 0, // position on the forward timeline (s)
+      target: 0, // time we are travelling to
+      chapter: 0, // chapter the scroll position asks for
+      arrived: true,
+      dir: 0, // 1 forward, -1 backward, 0 resting
+      D: stops[LAST] + 0.2, // replaced by real duration once metadata loads
+      autoplay: true, // false when the browser refuses muted playback (e.g. iOS low-power mode)
+      mx: 0, my: 0, tmx: 0, tmy: 0,
+      tilted: false,
+    };
+    let active = fwd; // the element currently on screen
+    let switching = false;
+
+    fwd.addEventListener('loadedmetadata', () => { state.D = fwd.duration || state.D; });
+    fwd.addEventListener('loadeddata', () => hero.classList.add('is-ready', 'is-loaded'), { once: true });
+    fwd.load();
+    rev.load();
+
+    const seek = (v, t) => new Promise((resolve) => {
+      if (Math.abs(v.currentTime - t) < 0.02) return resolve();
+      const done = () => { clearTimeout(timer); v.removeEventListener('seeked', done); resolve(); };
+      const timer = setTimeout(done, 700);
+      v.addEventListener('seeked', done);
+      v.currentTime = t;
+    });
+
+    const show = (v) => {
+      active = v;
+      fwd.classList.toggle('is-on', v === fwd);
+      rev.classList.toggle('is-on', v === rev);
+    };
+
+    // Travel to the target time: forward plays the normal file, backward plays the reversed file,
+    // so motion is always real 60 fps video in both directions.
+    async function travel() {
+      const dist = state.target - state.time;
+      if (Math.abs(dist) < 0.03) { finish(); return; }
+      const dir = Math.sign(dist);
+      const v = dir > 0 ? fwd : rev;
+      v.playbackRate = clamp(Math.abs(dist) / 2.2, 1.6, 4); // longer hops play faster
+      if (state.dir === dir && active === v && !v.paused) return; // already heading that way
+      state.dir = dir;
+      state.arrived = false;
+      if (active !== v) {
+        switching = true;
+        active.pause();
+        await seek(v, dir > 0 ? state.time : state.D - state.time);
+        show(v);
+        switching = false;
       }
-      return fallback ? fallback[Math.min(fallback.length - 1, Math.round((i / TOTAL) * fallback.length))] : null;
-    };
+      if (!state.autoplay) return jump();
+      try {
+        await v.play();
+      } catch {
+        state.autoplay = false;
+        jump();
+      }
+    }
 
-    /* ---- canvas sizing ---- */
-    const resize = () => {
-      const dpr = Math.min(devicePixelRatio || 1, 2);
-      const rect = canvas.getBoundingClientRect();
-      state.w = canvas.width = Math.round(rect.width * dpr);
-      state.h = canvas.height = Math.round(rect.height * dpr);
-      isPortrait = portrait();
-      ambient.width = 48;
-      ambient.height = Math.max(1, Math.round(48 * innerHeight / innerWidth));
-      ctx.imageSmoothingQuality = 'high';
-      state.dirty = true;
-      measure();
-    };
+    // Fallback without autoplay: cut straight to the chapter frame
+    async function jump() {
+      await seek(fwd, state.target);
+      show(fwd);
+      state.time = state.target;
+      finish();
+    }
 
-    const drawCover = (img, alpha) => {
-      const { w, h } = state;
-      const s = Math.max(w / img.naturalWidth, h / img.naturalHeight);
-      const dw = img.naturalWidth * s;
-      const dh = img.naturalHeight * s;
-      ctx.globalAlpha = alpha;
-      ctx.drawImage(img, (w - dw) / 2, (h - dh) / 2, dw, dh);
-    };
+    function finish() {
+      active.pause();
+      state.dir = 0;
+      state.arrived = true;
+    }
 
-    const draw = () => {
-      const f = state.progress * (TOTAL - 1);
-      const i0 = Math.floor(f);
-      const i1 = Math.min(TOTAL - 1, i0 + 1);
-      const t = f - i0;
-      const a = nearest(i0);
-      if (!a) return;
-      drawCover(a, 1);
-      const b = frames[i1];
-      if (b && b !== a && t > 0.01) drawCover(b, t); // cross-fade => seamless sub-frame motion
-      ctx.globalAlpha = 1;
-      if (isPortrait) actx.drawImage(canvas, 0, 0, ambient.width, ambient.height); // tiny + CSS blur = cheap fill
-    };
-
-    /* ---- scroll progress ---- */
+    /* ---- scroll -> chapter ---- */
     let heroTop = 0;
     let heroRange = 1;
-    function measure() {
-      const r = hero.getBoundingClientRect();
-      heroTop = r.top + scrollY;
+    const measure = () => {
+      heroTop = hero.getBoundingClientRect().top + scrollY;
       heroRange = Math.max(1, hero.offsetHeight - innerHeight);
-    }
-    const onScroll = () => {
-      state.target = clamp((scrollY - heroTop) / heroRange, 0, 1);
     };
-
-    /* ---- chapters (Z-axis fly-through) ---- */
-    const FADE = 0.05;
-    const updateChapters = (p) => {
-      chaps.forEach((c) => {
-        let d = 0;
-        if (p < c.in) d = -clamp((c.in - p) / FADE, 0, 1);
-        else if (p > c.out) d = clamp((p - c.out) / FADE, 0, 1);
-        const eased = Math.sign(d) * easeInOut(Math.abs(d));
-        const o = 1 - Math.abs(eased);
-        c.el.style.setProperty('--d', eased.toFixed(4));
-        c.el.style.setProperty('--o', o.toFixed(3));
-        c.el.classList.toggle('is-hidden', o <= 0.001);
-        c.el.classList.toggle('is-active', o > 0.6);
-      });
-      if (bar) bar.style.transform = `scaleX(${p.toFixed(4)})`;
-      if (cue) cue.style.opacity = String(clamp(1 - p / 0.06, 0, 1));
+    const onScroll = () => {
+      const p = clamp((scrollY - heroTop) / heroRange, 0, 1);
+      const chapter = Math.round(p * LAST);
+      if (cue) cue.style.opacity = String(clamp(1 - p / 0.05, 0, 1));
       hero.classList.toggle('is-past-start', p > 0.02);
+      if (chapter === state.chapter) return;
+      state.chapter = chapter;
+      state.target = stops[chapter];
+      if (!switching) travel();
     };
 
     /* ---- 3D parallax: mouse on desktop, gyroscope on phones, gentle drift as fallback ---- */
@@ -215,49 +160,131 @@
       }
     }
 
-    /* ---- render loop: only does work while something is moving ---- */
+    /* ---- frame loop: follows the playing video, animates chapter text and the 3D camera ---- */
     let visible = true;
     new IntersectionObserver(([e]) => { visible = e.isIntersecting; }).observe(hero);
+    let last = performance.now();
+    let frameNo = 0;
 
-    const tick = () => {
+    const tick = (now) => {
       requestAnimationFrame(tick);
+      const dt = Math.min(0.05, (now - last) / 1000);
+      last = now;
       if (!visible) return;
-      const dp = state.target - state.progress;
-      const moving = Math.abs(dp) > 0.00005;
-      state.progress = moving ? lerp(state.progress, state.target, 0.11) : state.target;
+      frameNo++;
+
+      if (!state.arrived && !switching) {
+        state.time = active === fwd ? fwd.currentTime : state.D - rev.currentTime;
+        const reached = state.dir > 0 ? state.time >= state.target - 0.02 : state.time <= state.target + 0.02;
+        if (reached || active.ended) { state.time = state.target; finish(); }
+        if (state.target !== stops[state.chapter]) { state.target = stops[state.chapter]; travel(); }
+      }
+      if (state.arrived && Math.abs(stops[state.chapter] - state.time) > 0.03 && !switching) {
+        state.target = stops[state.chapter];
+        travel();
+      }
+
+      // chapter text: the resting chapter flies in once the video is (almost) there
+      const remaining = Math.abs(state.target - state.time) / (active.playbackRate || 1);
+      const settled = state.arrived || remaining < 0.45;
+      chaps.forEach((c, i) => {
+        const goal = i < state.chapter ? 1 : i > state.chapter ? -1 : settled ? 0 : c.d;
+        const step = dt / 0.75;
+        if (Math.abs(c.d) === 1 && goal === -c.d) c.d = goal; // skipped chapter: don't flash it past the camera
+        else c.d = c.d < goal ? Math.min(goal, c.d + step) : Math.max(goal, c.d - step);
+        const eased = Math.sign(c.d) * easeInOut(Math.abs(c.d));
+        const o = 1 - Math.abs(eased);
+        c.el.style.setProperty('--d', eased.toFixed(4));
+        c.el.style.setProperty('--o', o.toFixed(3));
+        c.el.classList.toggle('is-hidden', o <= 0.001);
+        c.el.classList.toggle('is-active', o > 0.6);
+      });
+      if (bar) bar.style.transform = `scaleX(${clamp(state.time / stops[LAST], 0, 1).toFixed(4)})`;
+
+      // portrait phones: tiny blurred copy of the current frame fills the space around the 16:9 panel
+      if (isPortrait && frameNo % 6 === 0 && active.readyState >= 2) {
+        actx.drawImage(active, 0, 0, ambient.width, ambient.height);
+      }
+
       if (!state.tilted) {
         // no pointer/gyro yet: slow ambient drift so the scene still reads as 3D
-        const t = performance.now() / 1000;
+        const t = now / 1000;
         state.tmx = Math.sin(t * 0.35) * 0.45;
         state.tmy = Math.cos(t * 0.27) * 0.3;
       }
-      state.mx = lerp(state.mx, state.tmx, 0.07);
-      state.my = lerp(state.my, state.tmy, 0.07);
-
-      if (moving || state.dirty) {
-        draw();
-        updateChapters(state.progress);
-        state.dirty = false;
-      }
-      // 3D camera: scene and text layer tilt in opposite directions => strong depth separation
-      const dolly = 1 + Math.sin(state.progress * Math.PI * 4) * 0.01;
+      const k = 1 - Math.pow(1 - 0.07, dt * 60);
+      state.mx = lerp(state.mx, state.tmx, k);
+      state.my = lerp(state.my, state.tmy, k);
       // full-screen scene: modest tilt within the overscan; portrait floating panel: free to tilt further
-      const k = isPortrait ? 2 : 1;
+      const amp = isPortrait ? 2 : 1;
       scene.style.transform =
         `translate3d(${(-state.mx * 14).toFixed(2)}px, ${(-state.my * 9).toFixed(2)}px, 0) ` +
-        `rotateY(${(state.mx * 3.5 * k).toFixed(3)}deg) rotateX(${(-state.my * 2.5 * k).toFixed(3)}deg) scale(${dolly.toFixed(4)})`;
+        `rotateY(${(state.mx * 3.5 * amp).toFixed(3)}deg) rotateX(${(-state.my * 2.5 * amp).toFixed(3)}deg)`;
       stage.style.transform =
         `translate3d(${(state.mx * 16).toFixed(2)}px, ${(state.my * 10).toFixed(2)}px, 0) ` +
         `rotateY(${(state.mx * -3).toFixed(3)}deg) rotateX(${(state.my * 2).toFixed(3)}deg)`;
     };
 
+    const resize = () => {
+      isPortrait = portrait();
+      ambient.width = 24;
+      ambient.height = Math.max(1, Math.round(24 * innerHeight / innerWidth));
+      measure();
+      onScroll();
+    };
     addEventListener('scroll', onScroll, { passive: true });
-    addEventListener('resize', () => { maybeSwapSet(); resize(); onScroll(); });
+    addEventListener('resize', resize);
     resize();
-    onScroll();
-    state.progress = state.target;
-    updateChapters(state.progress);
+    // opening mid-page (reload / anchor): rest on that chapter without playing the whole way there
+    state.chapter = Math.round(clamp((scrollY - heroTop) / heroRange, 0, 1) * LAST);
+    state.time = state.target = stops[state.chapter];
+    if (state.time > 0) fwd.addEventListener('loadedmetadata', () => { fwd.currentTime = state.time; }, { once: true });
+    chaps.forEach((c, i) => { c.d = i < state.chapter ? 1 : i > state.chapter ? -1 : 0; });
     requestAnimationFrame(tick);
+  }
+
+  /* ================================================================ */
+  /* FULLSCREEN PLAYER                                                 */
+  /* ================================================================ */
+  const player = document.querySelector('[data-player]');
+  if (player) {
+    const pv = player.querySelector('video');
+    let open = false;
+    const fsElement = () => document.fullscreenElement || document.webkitFullscreenElement;
+    const close = () => {
+      if (!open) return;
+      open = false;
+      pv.pause();
+      player.hidden = true;
+      if (fsElement()) (document.exitFullscreen || document.webkitExitFullscreen).call(document).catch?.(() => {});
+      try { screen.orientation?.unlock?.(); } catch {}
+    };
+    document.querySelectorAll('[data-fullscreen]').forEach((btn) => btn.addEventListener('click', () => {
+      open = true;
+      player.hidden = false;
+      if (!pv.src) pv.src = pv.dataset.src;
+      pv.currentTime = 0;
+      const canElementFs = document.fullscreenEnabled || document.webkitFullscreenEnabled;
+      if (canElementFs) {
+        // Android / desktop: real fullscreen, then turn the phone sideways automatically
+        const req = player.requestFullscreen || player.webkitRequestFullscreen;
+        Promise.resolve(req.call(player))
+          .then(() => screen.orientation?.lock?.('landscape'))
+          .catch(() => {});
+        pv.play().catch(() => {});
+      } else if (pv.webkitEnterFullscreen) {
+        // iPhone: hand over to the native video player
+        pv.play().catch(() => {});
+        try { pv.webkitEnterFullscreen(); } catch {}
+      } else {
+        pv.play().catch(() => {});
+      }
+    }));
+    player.querySelector('[data-player-close]').addEventListener('click', close);
+    document.addEventListener('fullscreenchange', () => { if (!fsElement()) close(); });
+    document.addEventListener('webkitfullscreenchange', () => { if (!fsElement()) close(); });
+    pv.addEventListener('webkitendfullscreen', close);
+    addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
   }
 
   /* ================================================================ */

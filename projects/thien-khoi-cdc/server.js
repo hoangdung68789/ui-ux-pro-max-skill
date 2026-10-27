@@ -45,6 +45,7 @@ const MIME = {
   '.txt': 'text/plain; charset=utf-8',
   '.xml': 'application/xml; charset=utf-8',
   '.woff2': 'font/woff2',
+  '.mp4': 'video/mp4',
 };
 
 const SECURITY_HEADERS = {
@@ -309,13 +310,26 @@ async function serveStatic(req, res, pathname) {
   const etag = `W/"${stat.size.toString(16)}-${Math.floor(stat.mtimeMs).toString(16)}"`;
   const cache = rel.startsWith('/assets/') ? 'public, max-age=604800' : 'public, max-age=300';
   if (req.headers['if-none-match'] === etag) return send(res, 304, '', { ETag: etag, 'Cache-Control': cache });
-  res.writeHead(200, {
+  const headers = {
     ...SECURITY_HEADERS,
     'Content-Type': MIME[ext] || 'application/octet-stream',
-    'Content-Length': stat.size,
     'Cache-Control': cache,
+    'Accept-Ranges': 'bytes',
     ETag: etag,
-  });
+  };
+  // Byte ranges: Safari/iOS will not play (or seek) <video> without them
+  const range = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range || '');
+  if (range && (range[1] || range[2])) {
+    let start = range[1] ? Number(range[1]) : Math.max(0, stat.size - Number(range[2]));
+    let end = range[1] && range[2] ? Math.min(Number(range[2]), stat.size - 1) : stat.size - 1;
+    if (start > end || start >= stat.size) {
+      return send(res, 416, '', { 'Content-Range': `bytes */${stat.size}` });
+    }
+    res.writeHead(206, { ...headers, 'Content-Range': `bytes ${start}-${end}/${stat.size}`, 'Content-Length': end - start + 1 });
+    if (req.method === 'HEAD') return res.end();
+    return fs.createReadStream(file, { start, end }).pipe(res);
+  }
+  res.writeHead(200, { ...headers, 'Content-Length': stat.size });
   if (req.method === 'HEAD') return res.end();
   fs.createReadStream(file).pipe(res);
 }
