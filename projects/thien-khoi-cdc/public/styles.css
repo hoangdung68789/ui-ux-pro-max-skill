@@ -208,36 +208,6 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .hero__progress { position: absolute; left: var(--gutter); bottom: 38px; display: flex; align-items: center; gap: 16px; }
 .hero__bar { position: relative; width: clamp(80px, 16vw, 220px); height: 1px; background: var(--line-strong); overflow: hidden; }
 .hero__bar i { position: absolute; inset: 0; background: var(--gold-hi); transform-origin: left; transform: scaleX(0); }
-/* "look around" hint for touch screens, fades after the first swipe or tilt */
-.hero__hint {
-  position: absolute; left: 50%; top: 40%; transform: translate(-50%, -50%);
-  display: inline-flex; align-items: center; gap: 10px; padding: 10px 16px; white-space: nowrap;
-  border: 1px solid var(--line-strong); border-radius: 999px; background: rgba(13, 12, 10, .55);
-  font-size: 11px; letter-spacing: .1em; color: var(--text);
-  opacity: 0; transition: opacity .6s;
-}
-.hero__hint.is-on { opacity: 1; }
-.hero__hint svg { width: 18px; height: 18px; color: var(--gold-hi); animation: look 2.4s var(--ease) infinite; }
-@keyframes look { 0%, 100% { transform: translateX(-4px); } 50% { transform: translateX(4px); } }
-.hero__fs {
-  position: absolute; right: var(--gutter); bottom: 26px; z-index: 2;
-  display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 18px;
-  border: 1px solid var(--line-strong); border-radius: 999px; background: rgba(13, 12, 10, .5);
-  font: 500 11px/1 var(--f-text); letter-spacing: .18em; text-transform: uppercase; cursor: pointer;
-  transition: border-color .25s, color .25s;
-}
-.hero__fs svg { width: 16px; height: 16px; color: var(--gold-hi); }
-.hero__fs:hover { border-color: var(--gold); color: var(--gold-hi); }
-
-/* fullscreen film player */
-.player { position: fixed; inset: 0; z-index: 100; background: #000; display: grid; place-items: center; }
-.player video { width: 100%; height: 100%; object-fit: contain; background: #000; }
-.player__close {
-  position: absolute; top: calc(14px + env(safe-area-inset-top, 0px)); right: calc(14px + env(safe-area-inset-right, 0px));
-  width: 48px; height: 48px; border-radius: 50%; border: 1px solid var(--line-strong);
-  background: rgba(13, 12, 10, .6); font-size: 26px; line-height: 1; cursor: pointer;
-}
-.player__close:hover { border-color: var(--gold); color: var(--gold-hi); }
 
 /* ---------------- Sections ---------------- */
 .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 var(--gutter); }
@@ -426,7 +396,6 @@ button, input, select, textarea { font: inherit; color: inherit; }
   .chap__cta { grid-row: 5; }
   .eyebrow { font-size: 10px; letter-spacing: .2em; }
   .hero__progress { bottom: 100px; }
-  .hero__fs { bottom: 82px; min-height: 36px; padding: 0 14px; font-size: 10px; }
   .hero__cue { margin-top: 18px; }
   .commits { grid-template-columns: 1fr; }
   .commit, .commit + .commit { padding: 28px 0; border-left: 0; border-bottom: 1px solid var(--line); }
@@ -470,14 +439,13 @@ button, input, select, textarea { font: inherit; color: inherit; }
   .chap__aside { font-size: 17px; padding-right: 18px; }
   .hero__progress { bottom: 22px; }
   .hero__cue { display: none; }
-  .hero__fs { bottom: 12px; min-height: 38px; }
 }
 
 /* Reduced motion: static hero with the intro message, no scroll-jacking */
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   .hero { height: 100vh; height: 100svh; }
-  .hero__video, .hero__progress, .hero__hint, .hero__cue { display: none; }
+  .hero__video, .hero__progress, .hero__cue { display: none; }
   .hero.is-ready .hero__poster { opacity: 1; }
   .chap { display: none; }
   .chap--intro { display: flex; opacity: 1; transform: none; }

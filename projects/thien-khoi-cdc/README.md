@@ -2,7 +2,7 @@
 
 Website một trang cho **Thiên Khôi CDC** gồm:
 
-- **Hero 3D tương tác, toàn màn hình**: người xem cuộn tới đâu thì máy quay đi tới đó (từ ngoài cổng → sảnh → phòng khách → bếp), video 60 fps chạy xuôi hoặc ngược theo tay cuộn. Nhìn quanh bằng chuột, vuốt ngang hoặc nghiêng điện thoại. Chữ của từng chương đặt dọc đường đi và lướt qua camera. Có nút xem toàn màn hình.
+- **Hero 3D tương tác, toàn màn hình**: người xem cuộn tới đâu thì máy quay đi tới đó (từ ngoài cổng → sảnh → phòng khách → bếp), video 60 fps chạy xuôi hoặc ngược theo tay cuộn. Điện thoại cầm dọc dùng video 9:16 riêng; máy tính và điện thoại xoay ngang dùng 16:9 (xoay máy thì tự đổi, giữ nguyên vị trí). Chuột, vuốt ngang hoặc nghiêng máy tạo chiều sâu 3D. Chữ của từng chương đặt dọc đường đi và lướt qua camera.
 - **Front-end** thuần HTML/CSS/JS, không cần build. Font: Cormorant Garamond, Be Vietnam Pro, Allura (đều hỗ trợ tiếng Việt).
 - **Back-end Node.js** (không cần cài thư viện, chỉ cần Node 18 trở lên):
   - Render trang từ `data/content.json` để tốt cho SEO.
@@ -45,13 +45,14 @@ Chân trang lấy thông tin tập đoàn từ mục `group` trong `data/content
 
 ## Thay video hero (tự động)
 
-Hero phát **video thật 60 khung hình/giây** theo tay cuộn của người xem. Cuộn xuống là phát bản xuôi, cuộn lên là phát bản đảo chiều; tốc độ phát tỉ lệ với khoảng cách cần đi nên chuyển động luôn mượt. Nút **Xem toàn màn hình** mở cả video (có âm thanh).
+Hero phát **video thật 60 khung hình/giây** theo tay cuộn của người xem. Cuộn xuống là phát bản xuôi, cuộn lên là phát bản đảo chiều; tốc độ phát tỉ lệ với khoảng cách cần đi nên chuyển động luôn mượt.
 
 Đổi sang video khác chỉ cần **một lệnh** (máy cần cài `ffmpeg`):
 
 ```bash
 npm run video -- duong-dan/video-moi.mp4
 # Video không có logo/watermark cần cắt: CROP=none npm run video -- video-moi.mp4
+# Có sẵn video dọc 9:16 riêng cho điện thoại: MOBILE_SRC=video-doc.mp4 npm run video -- video-ngang.mp4
 ```
 
 Script `scripts/build-video.sh` tự làm các bước sau:
@@ -59,8 +60,10 @@ Script `scripts/build-video.sh` tự làm các bước sau:
 2. Nội suy chuyển động lên 60 fps.
 3. Khử nhiễu, phóng lên 1080p và làm nét.
 4. Tự tìm chỗ cắt cảnh đầu tiên và chỉ lấy đoạn đi liền mạch làm hiệu ứng cuộn.
-5. Xuất bản xuôi và bản đảo chiều, mỗi bản 1080p (máy tính) và 720p (điện thoại).
-6. Xuất cả video có âm thanh cho nút xem toàn màn hình, và tạo ảnh bìa.
+5. Xuất bản xuôi và bản đảo chiều: 16:9 1080p (máy tính), 16:9 720p (điện thoại xoay ngang), 9:16 720×1280 (điện thoại cầm dọc).
+6. Tạo ảnh bìa cho cả hai tỉ lệ.
+
+**Video 9:16 cho điện thoại:** nếu không có `MOBILE_SRC`, script tự cắt dọc từ video ngang. Khung dọc trượt mượt qua các điểm nhìn khai báo trong `scripts/reframe-916.json` (mỗi giây một điểm, `[giây, vị trí 0–1 từ trái sang phải]`). File này viết riêng cho video hiện tại: đổi video thì xóa file (cắt giữa) hoặc khai báo lại điểm nhìn.
 
 Không cần sửa mốc thời gian: vị trí chương (`data-at`) tính theo tỉ lệ đường đi nên tự khớp với video mới.
 

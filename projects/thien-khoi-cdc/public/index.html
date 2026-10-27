@@ -50,9 +50,9 @@
     <section class="hero" id="top" data-hero aria-label="Hành trình từ ngoài vào trong ngôi nhà">
       <div class="hero__sticky" data-look>
         <div class="hero__scene" data-scene>
-          <video class="hero__video is-on" data-video="fwd" data-src-lg="assets/video/walk-1080.mp4" data-src-sm="assets/video/walk-720.mp4" poster="assets/frames/poster.webp" muted playsinline preload="auto" disablepictureinpicture disableremoteplayback aria-hidden="true"></video>
-          <video class="hero__video" data-video="rev" data-src-lg="assets/video/walk-1080-rev.mp4" data-src-sm="assets/video/walk-720-rev.mp4" poster="assets/frames/poster.webp" muted playsinline preload="metadata" disablepictureinpicture disableremoteplayback aria-hidden="true"></video>
-          <picture class="hero__poster" aria-hidden="true"><img src="assets/frames/poster.webp" alt="" fetchpriority="high"></picture>
+          <video class="hero__video is-on" data-video="fwd" data-src-lg="assets/video/walk-1080.mp4" data-src-sm="assets/video/walk-720.mp4" data-src-portrait="assets/video/walk-916.mp4" poster="assets/frames/poster.webp" muted playsinline preload="auto" disablepictureinpicture disableremoteplayback aria-hidden="true"></video>
+          <video class="hero__video" data-video="rev" data-src-lg="assets/video/walk-1080-rev.mp4" data-src-sm="assets/video/walk-720-rev.mp4" data-src-portrait="assets/video/walk-916-rev.mp4" poster="assets/frames/poster.webp" muted playsinline preload="metadata" disablepictureinpicture disableremoteplayback aria-hidden="true"></video>
+          <picture class="hero__poster" aria-hidden="true"><source media="(max-aspect-ratio: 17/20)" srcset="assets/frames/poster-916.webp"><img src="assets/frames/poster.webp" alt="" fetchpriority="high"></picture>
         </div>
         <div class="hero__shade" aria-hidden="true"></div>
 
@@ -99,16 +99,8 @@
 
         <div class="hero__ui" aria-hidden="true">
           <div class="hero__progress"><span class="hero__bar"><i data-bar></i></span></div>
-          <p class="hero__hint" data-hint>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 7 3 12l5 5M16 7l5 5-5 5M3 12h18"/></svg>
-            Vuốt ngang hoặc nghiêng máy để nhìn quanh
-          </p>
         </div>
 
-        <button class="hero__fs" type="button" data-fullscreen>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
-          Xem toàn màn hình
-        </button>
       </div>
     </section>
 
@@ -268,11 +260,6 @@
   <div class="quick" aria-label="Liên hệ nhanh">
     <a class="quick__btn" href="tel:{{company.phoneHref}}">Gọi ngay</a>
     <a class="quick__btn quick__btn--gold" href="#bao-gia">Báo giá</a>
-  </div>
-
-  <div class="player" data-player hidden>
-    <video controls playsinline preload="none" data-src="assets/video/flythrough.mp4" poster="assets/frames/poster.webp"></video>
-    <button class="player__close" type="button" data-player-close aria-label="Đóng video">×</button>
   </div>
 
   <dialog class="lightbox" data-lightbox-dialog aria-label="Xem ảnh dự án">

@@ -1,7 +1,7 @@
 /* Thiên Khôi CDC — front-end
  * 1. Full-screen 3D walk-through hero: the scroll position drives real 60 fps video (forward file,
  *    or a reversed file when scrolling up); look around by mouse, swipe or phone tilt;
- *    chapter text placed along the walk flies past the camera. Fullscreen player for the full film
+ *    phones held upright play a dedicated 9:16 cut; chapter text placed along the walk flies past the camera
  * 2. Nav, reveal-on-scroll, 3D card tilt, lightbox
  * 3. Quote form -> POST /api/leads
  */
@@ -27,15 +27,23 @@
     const fwd = hero.querySelector('[data-video="fwd"]');
     const rev = hero.querySelector('[data-video="rev"]');
     const bar = hero.querySelector('[data-bar]');
-    const hint = hero.querySelector('[data-hint]');
     const W = 0.075; // half-width of the stretch of the walk where a chapter's text stays in place
     const F = 0.04; // fade length on either side
     const chaps = [...hero.querySelectorAll('[data-chap]')].map((el) => ({ el, at: parseFloat(el.dataset.at) }));
 
     const coarse = !finePointer;
-    const small = innerWidth / innerHeight < 0.85 || Math.max(innerWidth, innerHeight) < 1024;
-    fwd.src = small ? fwd.dataset.srcSm : fwd.dataset.srcLg;
-    rev.src = small ? rev.dataset.srcSm : rev.dataset.srcLg;
+    // phones held upright get the dedicated 9:16 cut; small landscape screens 720p; the rest 1080p
+    const pickSet = () => (innerWidth / innerHeight < 0.85 ? 'portrait' : Math.max(innerWidth, innerHeight) < 1024 ? 'sm' : 'lg');
+    const key = { portrait: 'srcPortrait', sm: 'srcSm', lg: 'srcLg' };
+    let set = pickSet();
+    const posterFor = (s) => (s === 'portrait' ? 'assets/frames/poster-916.webp' : 'assets/frames/poster.webp');
+    const loadSet = () => {
+      [fwd, rev].forEach((v) => {
+        v.poster = posterFor(set);
+        v.src = v.dataset[key[set]];
+      });
+    };
+    loadSet();
 
     /* ------------------------------------------------------------------
      * Walk engine. The scroll position sets a target time on the walk-through.
@@ -65,6 +73,17 @@
       measure();
       onScroll();
     });
+
+    // phone rotated: switch between the 9:16 and 16:9 files, staying at the same point of the walk
+    const maybeSwapSet = () => {
+      const next = pickSet();
+      if (next === set) return;
+      set = next;
+      active.pause();
+      show(fwd);
+      rev.preload = 'auto';
+      loadSet();
+    };
     fwd.addEventListener('loadeddata', () => hero.classList.add('is-ready'), { once: true });
     fwd.addEventListener('canplaythrough', () => { rev.preload = 'auto'; }, { once: true });
     setTimeout(() => { rev.preload = 'auto'; }, 4000);
@@ -168,10 +187,7 @@
      * the phone, so a narrow portrait screen still reaches the whole frame.
      * ------------------------------------------------------------------ */
     const look = { x: 0, y: 0, tx: 0, ty: 0, rx: 0, ry: 0, lastInput: -1e9 };
-    const touched = (now) => {
-      look.lastInput = now;
-      if (hint) hint.classList.remove('is-on');
-    };
+    const touched = (now) => { look.lastInput = now; };
 
     if (finePointer) {
       addEventListener('pointermove', (e) => {
@@ -223,18 +239,14 @@
       }
     }
 
-    if (hint && coarse) {
-      setTimeout(() => { if (performance.now() - look.lastInput > 2500) hint.classList.add('is-on'); }, 1500);
-      setTimeout(() => hint.classList.remove('is-on'), 7500);
-    }
-
-    /* ---- layout: the scene is a 16:9 box that covers the screen, plus a margin for the tilt ---- */
+    /* ---- layout: the scene is a 16:9 (or 9:16) box that covers the screen, plus a margin for the tilt ---- */
     const layout = () => {
       const w = sticky.clientWidth;
       const h = sticky.clientHeight;
-      const s = Math.max(w / 16, h / 9) * 1.05;
-      const sw = 16 * s;
-      const sh = 9 * s;
+      const [aw, ah] = set === 'portrait' ? [9, 16] : [16, 9];
+      const s = Math.max(w / aw, h / ah) * (set === 'portrait' ? 1.02 : 1.05); // portrait: keep the most of the 9:16 cut
+      const sw = aw * s;
+      const sh = ah * s;
       scene.style.width = `${sw}px`;
       scene.style.height = `${sh}px`;
       scene.style.left = `${(w - sw) / 2}px`;
@@ -289,57 +301,26 @@
       stage.style.transform = `translate3d(${(look.x * 8).toFixed(1)}px, ${(look.y * 5).toFixed(1)}px, 0)`;
     };
 
-    const onResize = () => { layout(); measure(); onScroll(); };
+    // Rotating the phone changes the page length; keep the viewer at the same point of the walk.
+    // (Height-only resizes come from the mobile address bar and are left alone.)
+    let lastW = innerWidth;
+    const onResize = () => {
+      const rotated = innerWidth !== lastW;
+      lastW = innerWidth;
+      const f = walk.target / END();
+      const inside = scrollY >= heroTop && scrollY <= heroTop + heroRange;
+      maybeSwapSet();
+      layout();
+      measure();
+      if (rotated && inside && f > 0) scrollTo(0, heroTop + (0.02 + f * 0.9) * heroRange);
+      onScroll();
+    };
     addEventListener('scroll', onScroll, { passive: true });
     addEventListener('resize', onResize);
     onResize();
     // opened mid-page (reload, anchor): start at that point of the walk instead of playing there
     walk.t = walk.target;
     requestAnimationFrame(tick);
-  }
-
-  /* ================================================================ */
-  /* FULLSCREEN PLAYER                                                 */
-  /* ================================================================ */
-  const player = document.querySelector('[data-player]');
-  if (player) {
-    const pv = player.querySelector('video');
-    let open = false;
-    const fsElement = () => document.fullscreenElement || document.webkitFullscreenElement;
-    const close = () => {
-      if (!open) return;
-      open = false;
-      pv.pause();
-      player.hidden = true;
-      if (fsElement()) (document.exitFullscreen || document.webkitExitFullscreen).call(document).catch?.(() => {});
-      try { screen.orientation?.unlock?.(); } catch {}
-    };
-    document.querySelectorAll('[data-fullscreen]').forEach((btn) => btn.addEventListener('click', () => {
-      open = true;
-      player.hidden = false;
-      if (!pv.src) pv.src = pv.dataset.src;
-      pv.currentTime = 0;
-      const canElementFs = document.fullscreenEnabled || document.webkitFullscreenEnabled;
-      if (canElementFs) {
-        // Android / desktop: real fullscreen, then turn the phone sideways automatically
-        const req = player.requestFullscreen || player.webkitRequestFullscreen;
-        Promise.resolve(req.call(player))
-          .then(() => screen.orientation?.lock?.('landscape'))
-          .catch(() => {});
-        pv.play().catch(() => {});
-      } else if (pv.webkitEnterFullscreen) {
-        // iPhone: hand over to the native video player
-        pv.play().catch(() => {});
-        try { pv.webkitEnterFullscreen(); } catch {}
-      } else {
-        pv.play().catch(() => {});
-      }
-    }));
-    player.querySelector('[data-player-close]').addEventListener('click', close);
-    document.addEventListener('fullscreenchange', () => { if (!fsElement()) close(); });
-    document.addEventListener('webkitfullscreenchange', () => { if (!fsElement()) close(); });
-    pv.addEventListener('webkitendfullscreen', close);
-    addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
   }
 
   /* ================================================================ */

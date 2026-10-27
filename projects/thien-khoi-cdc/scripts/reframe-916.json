@@ -1,0 +1,8 @@
+{
+  "_about": "Where the 9:16 phone cut looks, per second of the walk-through: [time s, centre 0-1]. Written for the current fly-through video. For a new video delete this file (centred crop) or set new points.",
+  "keys": [
+    [0, 0.47], [1, 0.52], [2, 0.56], [3, 0.52], [4, 0.62], [5, 0.64], [6, 0.68],
+    [7, 0.62], [8, 0.52], [9, 0.40], [10, 0.47], [11, 0.64], [12, 0.66], [13, 0.63],
+    [14, 0.56], [15, 0.46], [16, 0.56], [17, 0.67], [18, 0.62], [19, 0.62], [20, 0.62]
+  ]
+}
