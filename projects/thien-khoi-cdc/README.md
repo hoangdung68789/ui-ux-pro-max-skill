@@ -58,9 +58,9 @@ npm run video -- duong-dan/video-moi.mp4
 Script `scripts/build-video.sh` tự làm các bước sau:
 1. Cắt góc có logo Gemini.
 2. Nội suy chuyển động lên 60 fps.
-3. Khử nhiễu, phóng lên 1080p và làm nét.
+3. Khử nhiễu, giữ bản gốc 60 fps ở độ phân giải gốc rồi mỗi bản xuất chỉ phóng to **một lần** (Lanczos) và làm nét theo đúng kích thước đó.
 4. Tự tìm chỗ cắt cảnh đầu tiên và chỉ lấy đoạn đi liền mạch làm hiệu ứng cuộn.
-5. Xuất bản xuôi và bản đảo chiều: 16:9 1080p (máy tính), 16:9 720p (điện thoại xoay ngang), 9:16 720×1280 (điện thoại cầm dọc).
+5. Xuất bản xuôi và bản đảo chiều: 16:9 1920×1080 (máy tính, điện thoại xoay ngang), 16:9 1280×720 (màn hình độ phân giải thấp), 9:16 1080×1920 (điện thoại cầm dọc). Mỗi file khoảng 13 MB trở xuống; bản đảo chiều chỉ tải sau khi bản xuôi đã tải xong.
 6. Tạo ảnh bìa cho cả hai tỉ lệ.
 
 **Video 9:16 cho điện thoại:** nếu không có `MOBILE_SRC`, script tự cắt dọc từ video ngang. Khung dọc trượt mượt qua các điểm nhìn khai báo trong `scripts/reframe-916.json` (mỗi giây một điểm, `[giây, vị trí 0–1 từ trái sang phải]`). File này viết riêng cho video hiện tại: đổi video thì xóa file (cắt giữa) hoặc khai báo lại điểm nhìn.

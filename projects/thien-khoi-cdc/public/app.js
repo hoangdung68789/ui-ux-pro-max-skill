@@ -26,14 +26,16 @@
     const stage = hero.querySelector('[data-stage]');
     const fwd = hero.querySelector('[data-video="fwd"]');
     const rev = hero.querySelector('[data-video="rev"]');
-    const bar = hero.querySelector('[data-bar]');
     const W = 0.075; // half-width of the stretch of the walk where a chapter's text stays in place
     const F = 0.04; // fade length on either side
     const chaps = [...hero.querySelectorAll('[data-chap]')].map((el) => ({ el, at: parseFloat(el.dataset.at) }));
 
     const coarse = !finePointer;
-    // phones held upright get the dedicated 9:16 cut; small landscape screens 720p; the rest 1080p
-    const pickSet = () => (innerWidth / innerHeight < 0.85 ? 'portrait' : Math.max(innerWidth, innerHeight) < 1024 ? 'sm' : 'lg');
+    // phones held upright get the 9:16 cut; otherwise pick 16:9 by real device pixels (a phone held
+    // sideways is ~2500 px wide, so it gets 1080p too)
+    const pickSet = () =>
+      innerWidth / innerHeight < 0.85 ? 'portrait'
+        : Math.max(innerWidth, innerHeight) * Math.min(devicePixelRatio || 1, 3) < 1400 ? 'sm' : 'lg';
     const key = { portrait: 'srcPortrait', sm: 'srcSm', lg: 'srcLg' };
     let set = pickSet();
     const posterFor = (s) => (s === 'portrait' ? 'assets/frames/poster-916.webp' : 'assets/frames/poster.webp');
@@ -58,6 +60,8 @@
       mode: 'play', // 'seek' when the browser refuses muted playback (stepped seeking instead)
       rate: 1,
       rateAt: 0,
+      dir: 0, // direction of the last movement
+      movedAt: -1e9,
       seeking: false,
     };
     const END = () => walk.D - 0.05;
@@ -69,7 +73,7 @@
 
     fwd.addEventListener('loadedmetadata', () => {
       walk.D = fwd.duration || walk.D;
-      if (walk.t > 0) fwd.currentTime = walk.t;
+      if (walk.t > 0 && !switching) fwd.currentTime = walk.t;
       measure();
       onScroll();
     });
@@ -79,14 +83,23 @@
       const next = pickSet();
       if (next === set) return;
       set = next;
+      const keep = walk.t;
+      switching = true; // freeze the walk until the new file sits on the same frame
       active.pause();
       show(fwd);
-      rev.preload = 'auto';
       loadSet();
+      fwd.addEventListener('loadedmetadata', () => {
+        seek(fwd, keep).then(() => { walk.t = keep; switching = false; });
+      }, { once: true });
     };
     fwd.addEventListener('loadeddata', () => hero.classList.add('is-ready'), { once: true });
-    fwd.addEventListener('canplaythrough', () => { rev.preload = 'auto'; }, { once: true });
-    setTimeout(() => { rev.preload = 'auto'; }, 4000);
+    // bandwidth goes to the forward file first; the reversed one follows once it is buffered
+    const loadRev = () => { if (rev.preload !== 'auto') rev.preload = 'auto'; };
+    fwd.addEventListener('progress', () => {
+      const b = fwd.buffered;
+      if (b.length && b.end(b.length - 1) >= (fwd.duration || 1e9) - 0.5) loadRev();
+    });
+    setTimeout(loadRev, 8000);
 
     const show = (v) => {
       active = v;
@@ -150,15 +163,24 @@
       if (switching) return;
       walk.t = active === fwd ? fwd.currentTime : mirror(rev.currentTime);
       const dist = walk.target - walk.t;
-      if (Math.abs(dist) < 0.025 || (dist > 0 && fwd.ended && active === fwd)) {
-        if (!active.paused) { active.pause(); preseek(); }
+      const dir = Math.sign(dist);
+      const moving = !active.paused;
+      // stop a frame early rather than late; a small overshoot is accepted instead of reversing
+      const stopBand = moving ? Math.max(0.03, walk.rate / 60 * 1.5) : 0.03;
+      const smallReverse = dir !== walk.dir && Math.abs(dist) < 0.2 && now - walk.movedAt < 700;
+      if (Math.abs(dist) < stopBand || smallReverse || (dist > 0 && fwd.ended && active === fwd)) {
+        if (moving) { active.pause(); walk.movedAt = now; preseek(); }
         return;
       }
-      const want = dist > 0 ? fwd : rev;
+      const want = dir > 0 ? fwd : rev;
       if (want !== active) { swapTo(want); return; }
-      // speed follows the distance: a flick of the page catches up fast, then eases into place
-      const rate = clamp(Math.abs(dist) * 2.4, 0.4, 5);
-      if (Math.abs(rate - walk.rate) > walk.rate * 0.12 && now - walk.rateAt > 120) {
+      walk.dir = dir;
+      walk.movedAt = now;
+      // speed follows the distance: a flick of the page catches up fast, then eases into place.
+      // Slowing down is applied at once; speeding up is rate-limited to avoid jitter.
+      const rate = clamp(Math.abs(dist) * 2.2, 0.35, 4);
+      const slower = rate < walk.rate * 0.95;
+      if ((slower && now - walk.rateAt > 40) || (rate > walk.rate * 1.12 && now - walk.rateAt > 120)) {
         active.playbackRate = rate;
         walk.rate = rate;
         walk.rateAt = now;
@@ -182,52 +204,33 @@
     }
 
     /* ------------------------------------------------------------------
-     * Look-around. The 16:9 scene covers the screen with some to spare; the
-     * viewer pans across it with the mouse, a horizontal swipe or by tilting
-     * the phone, so a narrow portrait screen still reaches the whole frame.
+     * Depth. The mouse (desktop) or tilting the phone shifts the scene a few
+     * pixels against the text layer. Nothing moves on its own, and at rest the
+     * video is drawn with no transform at all, so it stays pixel-sharp.
      * ------------------------------------------------------------------ */
     const look = { x: 0, y: 0, tx: 0, ty: 0, rx: 0, ry: 0, lastInput: -1e9 };
-    const touched = (now) => { look.lastInput = now; };
 
     if (finePointer) {
       addEventListener('pointermove', (e) => {
         if (e.pointerType !== 'mouse') return;
         look.tx = (e.clientX / innerWidth) * 2 - 1;
         look.ty = ((e.clientY / innerHeight) * 2 - 1) * 0.6;
-        touched(performance.now());
+        look.lastInput = performance.now();
       }, { passive: true });
+      document.addEventListener('pointerleave', () => { look.tx = 0; look.ty = 0; });
     }
 
-    // horizontal drag (vertical swipes still scroll the page: touch-action: pan-y)
-    let drag = null;
-    sticky.addEventListener('pointerdown', (e) => {
-      if (e.pointerType === 'mouse') return;
-      drag = { x: e.clientX, start: look.tx };
-    });
-    sticky.addEventListener('pointermove', (e) => {
-      if (!drag || look.rx <= 0) return;
-      look.tx = clamp(drag.start - (e.clientX - drag.x) / look.rx, -1, 1); // scene follows the finger 1:1
-      touched(performance.now());
-    });
-    ['pointerup', 'pointercancel', 'pointerleave'].forEach((type) => sticky.addEventListener(type, () => { drag = null; }));
-
-    // gyroscope: turning the phone turns the view
+    // gyroscope: relative to how the phone was held when the page opened; drifts back to centre
     if (coarse && 'DeviceOrientationEvent' in window) {
-      let lastG = null;
-      let lastB = null;
+      let base = null;
       const onTilt = (e) => {
         if (e.gamma == null || e.beta == null) return;
-        if (lastG !== null) {
-          const dg = e.gamma - lastG;
-          const db = e.beta - lastB;
-          if (Math.abs(dg) > 0.15 || Math.abs(db) > 0.15) {
-            look.tx = clamp(look.tx + dg / 22, -1, 1);
-            look.ty = clamp(look.ty + db / 40, -0.6, 0.6);
-            if (Math.abs(dg) > 0.6) touched(performance.now());
-          }
-        }
-        lastG = e.gamma;
-        lastB = e.beta;
+        if (!base) base = { g: e.gamma, b: e.beta };
+        base.g = lerp(base.g, e.gamma, 0.01); // slowly re-centre so a new grip is the new neutral
+        base.b = lerp(base.b, e.beta, 0.01);
+        look.tx = clamp((e.gamma - base.g) / 18, -1, 1);
+        look.ty = clamp((e.beta - base.b) / 30, -0.6, 0.6);
+        look.lastInput = performance.now();
       };
       const listen = () => addEventListener('deviceorientation', onTilt, { passive: true });
       if (typeof DeviceOrientationEvent.requestPermission === 'function') {
@@ -239,18 +242,18 @@
       }
     }
 
-    /* ---- layout: the scene is a 16:9 (or 9:16) box that covers the screen, plus a margin for the tilt ---- */
+    /* ---- layout: the scene is a 16:9 (or 9:16) box that covers the screen, plus a small margin for depth ---- */
     const layout = () => {
       const w = sticky.clientWidth;
       const h = sticky.clientHeight;
       const [aw, ah] = set === 'portrait' ? [9, 16] : [16, 9];
-      const s = Math.max(w / aw, h / ah) * (set === 'portrait' ? 1.02 : 1.05); // portrait: keep the most of the 9:16 cut
-      const sw = aw * s;
-      const sh = ah * s;
+      const s = Math.max(w / aw, h / ah) * 1.02;
+      const sw = Math.round(aw * s);
+      const sh = Math.round(ah * s);
       scene.style.width = `${sw}px`;
       scene.style.height = `${sh}px`;
-      scene.style.left = `${(w - sw) / 2}px`;
-      scene.style.top = `${(h - sh) / 2}px`;
+      scene.style.left = `${Math.round((w - sw) / 2)}px`;
+      scene.style.top = `${Math.round((h - sh) / 2)}px`;
       look.rx = (sw - w) / 2;
       look.ry = (sh - h) / 2;
     };
@@ -268,7 +271,7 @@
 
       stepWalk(now);
 
-      // chapter text sits at fixed points along the walk and flies past the camera
+      // chapter text sits at fixed points along the walk: rises in, then drifts up and fades as you pass
       const f = clamp(walk.t / END(), 0, 1);
       chaps.forEach((c) => {
         let d = 0;
@@ -281,24 +284,21 @@
         c.el.classList.toggle('is-hidden', o <= 0.001);
         c.el.classList.toggle('is-active', o > 0.6);
       });
-      if (bar) bar.style.transform = `scaleX(${f.toFixed(4)})`;
 
-      // idle: the camera slowly looks left and right on its own
-      if (now - look.lastInput > 4000 && !drag) {
-        const amp = coarse ? 0.5 : 0.3;
-        look.tx = Math.sin(now / 1000 * (Math.PI * 2 / 18)) * amp;
-        look.ty = Math.cos(now / 1000 * (Math.PI * 2 / 23)) * 0.15;
-      }
-      const k = 1 - Math.pow(1 - (drag ? 0.35 : 0.07), dt * 60);
+      const k = 1 - Math.pow(1 - 0.08, dt * 60);
       look.x = lerp(look.x, look.tx, k);
       look.y = lerp(look.y, look.ty, k);
-      const px = -look.x * look.rx * 0.92;
-      const py = -look.y * look.ry * 0.9;
-      scene.style.transform =
-        `translate3d(${px.toFixed(1)}px, ${py.toFixed(1)}px, 0) ` +
-        `rotateY(${(look.x * 2.2).toFixed(3)}deg) rotateX(${(-look.y * 1.6).toFixed(3)}deg)`;
-      // the text layer drifts a little the other way: depth without tilting the text
-      stage.style.transform = `translate3d(${(look.x * 8).toFixed(1)}px, ${(look.y * 5).toFixed(1)}px, 0)`;
+      if (Math.abs(look.x) < 0.004 && Math.abs(look.y) < 0.004 && Math.abs(look.tx) < 0.004 && Math.abs(look.ty) < 0.004) {
+        // at rest: no transform, the video maps 1:1 to the screen (sharpest)
+        if (scene.style.transform) { scene.style.transform = ''; stage.style.transform = ''; }
+      } else {
+        const px = -look.x * look.rx * 0.9;
+        const py = -look.y * look.ry * 0.9;
+        // a slight turn only with a mouse; on phones the video is only shifted, never resampled at an angle
+        const turn = finePointer ? ` rotateY(${(look.x * 1.2).toFixed(3)}deg) rotateX(${(-look.y * 0.8).toFixed(3)}deg)` : '';
+        scene.style.transform = `translate3d(${px.toFixed(1)}px, ${py.toFixed(1)}px, 0)${turn}`;
+        stage.style.transform = `translate3d(${(look.x * 6).toFixed(1)}px, ${(look.y * 4).toFixed(1)}px, 0)`;
+      }
     };
 
     // Rotating the phone changes the page length; keep the viewer at the same point of the walk.
