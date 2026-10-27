@@ -48,10 +48,10 @@ Hero dùng chuỗi ảnh WebP để tua mượt, không phát trực tiếp vide
 ```bash
 V=video-moi.mp4
 ffmpeg -i "$V" -vf "fps=10,crop=1120:630:0:0,hqdn3d=1.5:1.5:3:3,scale=2560:1440:flags=lanczos,unsharp=5:5:0.9:5:5:0.0,cas=0.5" -c:v libwebp -quality 80 public/assets/frames/hd/f%03d.webp
-ffmpeg -i "$V" -vf "fps=6,crop=420:630:350:0,hqdn3d=1.5:1.5:3:3,scale=960:1440:flags=lanczos,unsharp=5:5:0.9:5:5:0.0,cas=0.5" -c:v libwebp -quality 76 public/assets/frames/pt/f%03d.webp
+ffmpeg -i "$V" -vf "fps=6,crop=1120:630:0:0,hqdn3d=1.5:1.5:3:3,scale=1280:720:flags=lanczos,unsharp=5:5:0.7:5:5:0.0,cas=0.5" -c:v libwebp -quality 80 public/assets/frames/md/f%03d.webp
 ```
 
-Sau đó sửa `data-frames-hd` / `data-frames-pt` trong `public/index.html` thành số ảnh vừa tạo.
+Sau đó sửa `data-frames-hd` / `data-frames-md` trong `public/index.html` thành số ảnh vừa tạo.
 Video mẫu hiện tại đã được cắt khung để bỏ logo Gemini ở góc phải.
 
 ## Triển khai

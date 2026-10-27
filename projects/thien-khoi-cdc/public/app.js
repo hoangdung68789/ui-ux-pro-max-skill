@@ -22,6 +22,8 @@
   function initHero(hero) {
     const canvas = hero.querySelector('[data-canvas]');
     const ctx = canvas.getContext('2d', { alpha: false });
+    const ambient = hero.querySelector('[data-ambient]');
+    const actx = ambient.getContext('2d', { alpha: false });
     const scene = hero.querySelector('[data-scene]');
     const stage = hero.querySelector('[data-stage]');
     const chaps = [...hero.querySelectorAll('[data-chap]')].map((el) => ({
@@ -35,10 +37,11 @@
     const cue = hero.querySelector('[data-cue]');
     const loaderText = hero.querySelector('[data-loader-text]');
 
-    // Portrait screens (phones) get a dedicated sharp portrait crop; everything else the 2560px set
-    const pickSet = () => (innerWidth / innerHeight < 0.85 ? 'pt' : 'hd');
+    // Portrait phones show the full 16:9 frame in a floating panel (CSS), so a 1280px set is plenty there
+    const portrait = () => innerWidth / innerHeight < 0.85;
+    const pickSet = () => (portrait() ? 'md' : 'hd');
     let set = pickSet();
-    let TOTAL = parseInt(hero.dataset[set === 'pt' ? 'framesPt' : 'framesHd'], 10);
+    let TOTAL = parseInt(hero.dataset[set === 'md' ? 'framesMd' : 'framesHd'], 10);
     const src = (i) => `assets/frames/${set}/f${String(i + 1).padStart(3, '0')}.webp`;
     let frames = new Array(TOTAL);
     let loadedCount = 0;
@@ -94,7 +97,7 @@
       if (next === set) return;
       set = next;
       generation++;
-      TOTAL = parseInt(hero.dataset[set === 'pt' ? 'framesPt' : 'framesHd'], 10);
+      TOTAL = parseInt(hero.dataset[set === 'md' ? 'framesMd' : 'framesHd'], 10);
       const old = frames;
       frames = new Array(TOTAL);
       loadedCount = 0;
@@ -106,6 +109,7 @@
       if (keep.length) fallback = keep;
     };
     let fallback = null;
+    let isPortrait = portrait();
 
     const nearest = (i) => {
       if (frames[i]) return frames[i];
@@ -122,6 +126,9 @@
       const rect = canvas.getBoundingClientRect();
       state.w = canvas.width = Math.round(rect.width * dpr);
       state.h = canvas.height = Math.round(rect.height * dpr);
+      isPortrait = portrait();
+      ambient.width = 48;
+      ambient.height = Math.max(1, Math.round(48 * innerHeight / innerWidth));
       ctx.imageSmoothingQuality = 'high';
       state.dirty = true;
       measure();
@@ -147,6 +154,7 @@
       const b = frames[i1];
       if (b && b !== a && t > 0.01) drawCover(b, t); // cross-fade => seamless sub-frame motion
       ctx.globalAlpha = 1;
+      if (isPortrait) actx.drawImage(canvas, 0, 0, ambient.width, ambient.height); // tiny + CSS blur = cheap fill
     };
 
     /* ---- scroll progress ---- */
@@ -242,9 +250,11 @@
       }
       // 3D camera: scene and text layer tilt in opposite directions => strong depth separation
       const dolly = 1 + Math.sin(state.progress * Math.PI * 4) * 0.01;
+      // full-screen scene: modest tilt within the overscan; portrait floating panel: free to tilt further
+      const k = isPortrait ? 2 : 1;
       scene.style.transform =
-        `translate3d(${(-state.mx * 22).toFixed(2)}px, ${(-state.my * 14).toFixed(2)}px, 0) ` +
-        `rotateY(${(state.mx * 5).toFixed(3)}deg) rotateX(${(-state.my * 3.5).toFixed(3)}deg) scale(${dolly.toFixed(4)})`;
+        `translate3d(${(-state.mx * 14).toFixed(2)}px, ${(-state.my * 9).toFixed(2)}px, 0) ` +
+        `rotateY(${(state.mx * 3.5 * k).toFixed(3)}deg) rotateX(${(-state.my * 2.5 * k).toFixed(3)}deg) scale(${dolly.toFixed(4)})`;
       stage.style.transform =
         `translate3d(${(state.mx * 16).toFixed(2)}px, ${(state.my * 10).toFixed(2)}px, 0) ` +
         `rotateY(${(state.mx * -3).toFixed(3)}deg) rotateX(${(state.my * 2).toFixed(3)}deg)`;

@@ -119,12 +119,26 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .hero { position: relative; height: 620vh; background: #000; margin-top: calc(env(safe-area-inset-top, 0px) * -1); }
 .hero__sticky { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; perspective: 1400px; }
 .hero__scene {
-  position: absolute; inset: -5%; /* overscan so the 3D tilt never reveals an edge */
+  position: absolute; inset: -3%; /* small overscan so the 3D tilt never reveals an edge */
   transform-style: preserve-3d; will-change: transform;
 }
 .hero__canvas, .hero__poster { position: absolute; inset: 0; width: 100%; height: 100%; }
 .hero__poster { transition: opacity .6s; }
 .hero__poster img { width: 100%; height: 100%; object-fit: cover; }
+.hero__ambient { display: none; }
+
+/* Portrait phones: show the full 16:9 frame as a floating 3D screen over a blurred ambient fill */
+@media (max-aspect-ratio: 17/20) {
+  .hero__ambient {
+    display: block; position: absolute; inset: -10%; width: 120%; height: 120%;
+    filter: blur(28px) brightness(.75) saturate(1.15);
+  }
+  .hero__scene {
+    inset: auto 0; top: 24svh; top: 24vh; aspect-ratio: 16 / 9; height: auto;
+    border-radius: 4px; overflow: hidden;
+    box-shadow: 0 30px 60px -20px rgba(0, 0, 0, .8), 0 0 0 1px rgba(227, 199, 146, .18);
+  }
+}
 .hero.is-ready .hero__poster { opacity: 0; }
 .hero__shade {
   position: absolute; inset: 0; pointer-events: none;

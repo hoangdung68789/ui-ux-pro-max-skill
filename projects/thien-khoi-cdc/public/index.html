@@ -47,11 +47,12 @@
 
   <main>
     <!-- ============ HERO: SCROLL-DRIVEN 3D FLY-THROUGH ============ -->
-    <section class="hero" id="top" data-hero data-frames-hd="300" data-frames-pt="180" aria-label="Giới thiệu hành trình kiến tạo">
+    <section class="hero" id="top" data-hero data-frames-hd="300" data-frames-md="180" aria-label="Giới thiệu hành trình kiến tạo">
       <div class="hero__sticky">
+        <canvas class="hero__ambient" data-ambient aria-hidden="true"></canvas>
         <div class="hero__scene" data-scene>
           <canvas class="hero__canvas" data-canvas aria-hidden="true"></canvas>
-          <picture class="hero__poster" aria-hidden="true"><source media="(orientation: portrait)" srcset="assets/frames/pt/f001.webp"><img src="assets/frames/poster.webp" alt="" fetchpriority="high"></picture>
+          <picture class="hero__poster" aria-hidden="true"><img src="assets/frames/poster.webp" alt="" fetchpriority="high"></picture>
         </div>
         <div class="hero__shade" aria-hidden="true"></div>
 
