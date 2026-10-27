@@ -19,7 +19,8 @@
   --f-text: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
   --f-script: "Allura", "Brush Script MT", cursive;
 
-  --gutter: clamp(16px, 5vw, 88px);
+  /* also clears the notch when a phone is held sideways */
+  --gutter: max(clamp(16px, 5vw, 88px), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
   --maxw: 1240px;
   --radius: 2px;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
@@ -212,13 +213,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .scroll-cue__dot { animation: cue 1.8s var(--ease) infinite; }
 @keyframes cue { 0% { transform: translateY(-2px); opacity: 0; } 40% { opacity: 1; } 100% { transform: translateY(5px); opacity: 0; } }
 .hero__progress { position: absolute; left: var(--gutter); bottom: 38px; display: flex; align-items: center; gap: 16px; }
-.hero__count { font: 400 13px/1 var(--f-display); letter-spacing: .1em; color: var(--muted); }
-.hero__count b { font-weight: 500; color: var(--text); font-size: 15px; }
 .hero__bar { position: relative; width: clamp(80px, 16vw, 220px); height: 1px; background: var(--line-strong); overflow: hidden; }
 .hero__bar i { position: absolute; inset: 0; background: var(--gold-hi); transform-origin: left; transform: scaleX(0); }
-.hero__dots { position: absolute; right: calc(var(--gutter) * .5); top: 50%; transform: translateY(-50%); list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
-.hero__dots li { width: 5px; height: 5px; border-radius: 50%; background: rgba(237, 231, 221, .3); transition: background-color .3s, transform .3s; }
-.hero__dots li.is-on { background: var(--gold-hi); transform: scale(1.6); }
 .hero__loader {
   position: absolute; right: var(--gutter); bottom: 34px;
   font: 400 12px/1 var(--f-text); letter-spacing: .2em; color: var(--muted);
@@ -376,7 +372,6 @@ button, input, select, textarea { font: inherit; color: inherit; }
   .chap__text { grid-row: 4; font-size: 14px; }
   .chap__cta { grid-row: 5; }
   .eyebrow { font-size: 10px; letter-spacing: .2em; }
-  .hero__dots { display: none; }
   .scroll-cue { bottom: 80px; left: auto; right: var(--gutter); transform: none; }
   .hero__progress { bottom: 84px; }
   .hero__loader { bottom: 84px; }
@@ -408,11 +403,28 @@ button, input, select, textarea { font: inherit; color: inherit; }
   .quick__btn--gold { background: var(--gold); color: var(--on-gold); border-color: var(--gold); font-weight: 500; }
 }
 
+/* Phones held sideways (short landscape screens): compact hero so text never collides */
+@media (orientation: landscape) and (max-height: 500px) {
+  .nav, .nav.is-solid { height: calc(56px + env(safe-area-inset-top, 0px)); }
+  .chap { padding-top: 64px; padding-bottom: 52px; grid-template-columns: minmax(0, 520px) 1fr; }
+  .chap--intro .eyebrow { display: none; }
+  .hero__title { font-size: 36px; }
+  .hero__sub { margin-top: 10px; font-size: 13px; }
+  .chap__from { font-size: 22px; }
+  .chap__lead .script { font-size: 58px; }
+  .chap__text { margin-top: 8px; font-size: 13px; line-height: 1.55; max-width: 56ch; }
+  .chap__cta { margin-top: 14px; }
+  .chap__cta .btn { min-height: 40px; padding: 0 18px; }
+  .chap__aside { font-size: 17px; padding-right: 18px; }
+  .hero__progress { bottom: 22px; }
+  .scroll-cue { bottom: 16px; }
+}
+
 /* Reduced motion: static hero with the intro message, no scroll-jacking */
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   .hero { height: 100vh; height: 100svh; }
-  .hero__canvas, .hero__dots, .hero__progress, .scroll-cue, .hero__loader { display: none; }
+  .hero__canvas, .hero__progress, .scroll-cue, .hero__loader { display: none; }
   .hero.is-ready .hero__poster { opacity: 1; }
   .chap { display: none; }
   .chap--intro { display: flex; opacity: 1; transform: none; }

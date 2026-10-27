@@ -32,14 +32,13 @@
       out: parseFloat(el.dataset.out),
     }));
     const bar = hero.querySelector('[data-bar]');
-    const count = hero.querySelector('[data-count]');
-    const dots = [...hero.querySelectorAll('[data-dots] li')];
     const cue = hero.querySelector('[data-cue]');
     const loaderText = hero.querySelector('[data-loader-text]');
 
-    // Portrait phones show the full 16:9 frame in a floating panel (CSS), so a 1280px set is plenty there
+    // Portrait phones show the full 16:9 frame in a floating panel (CSS); phones and small screens
+    // (portrait or landscape) get the 1280px set, larger screens the 2560px set
     const portrait = () => innerWidth / innerHeight < 0.85;
-    const pickSet = () => (portrait() ? 'md' : 'hd');
+    const pickSet = () => (portrait() || Math.max(innerWidth, innerHeight) < 1024 ? 'md' : 'hd');
     let set = pickSet();
     let TOTAL = parseInt(hero.dataset[set === 'md' ? 'framesMd' : 'framesHd'], 10);
     const src = (i) => `assets/frames/${set}/f${String(i + 1).padStart(3, '0')}.webp`;
@@ -171,10 +170,8 @@
 
     /* ---- chapters (Z-axis fly-through) ---- */
     const FADE = 0.05;
-    let activeIndex = -1;
     const updateChapters = (p) => {
-      let active = 0;
-      chaps.forEach((c, idx) => {
+      chaps.forEach((c) => {
         let d = 0;
         if (p < c.in) d = -clamp((c.in - p) / FADE, 0, 1);
         else if (p > c.out) d = clamp((p - c.out) / FADE, 0, 1);
@@ -184,13 +181,7 @@
         c.el.style.setProperty('--o', o.toFixed(3));
         c.el.classList.toggle('is-hidden', o <= 0.001);
         c.el.classList.toggle('is-active', o > 0.6);
-        if (p >= c.in - FADE / 2) active = idx;
       });
-      if (active !== activeIndex) {
-        activeIndex = active;
-        if (count) count.textContent = String(active + 1).padStart(2, '0');
-        dots.forEach((d, k) => d.classList.toggle('is-on', k === active));
-      }
       if (bar) bar.style.transform = `scaleX(${p.toFixed(4)})`;
       if (cue) cue.style.opacity = String(clamp(1 - p / 0.06, 0, 1));
       hero.classList.toggle('is-past-start', p > 0.02);
