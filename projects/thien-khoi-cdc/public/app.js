@@ -23,6 +23,7 @@
     const canvas = hero.querySelector('[data-canvas]');
     const ctx = canvas.getContext('2d', { alpha: false });
     const scene = hero.querySelector('[data-scene]');
+    const stage = hero.querySelector('[data-stage]');
     const chaps = [...hero.querySelectorAll('[data-chap]')].map((el) => ({
       el,
       in: parseFloat(el.dataset.in),
@@ -34,34 +35,45 @@
     const cue = hero.querySelector('[data-cue]');
     const loaderText = hero.querySelector('[data-loader-text]');
 
-    const TOTAL = parseInt(hero.dataset.frames, 10);
-    const size = Math.min(innerWidth, innerHeight * 16 / 9) * Math.min(devicePixelRatio || 1, 2) > 1000 ? 'lg' : 'sm';
-    const src = (i) => `assets/frames/${size}/f${String(i + 1).padStart(3, '0')}.webp`;
-    const frames = new Array(TOTAL);
+    // Portrait screens (phones) get a dedicated sharp portrait crop; everything else the 2560px set
+    const pickSet = () => (innerWidth / innerHeight < 0.85 ? 'pt' : 'hd');
+    let set = pickSet();
+    let TOTAL = parseInt(hero.dataset[set === 'pt' ? 'framesPt' : 'framesHd'], 10);
+    const src = (i) => `assets/frames/${set}/f${String(i + 1).padStart(3, '0')}.webp`;
+    let frames = new Array(TOTAL);
     let loadedCount = 0;
+    let generation = 0; // bumps when the frame set changes (phone rotated)
 
     const state = {
       target: 0, // scroll progress 0..1
       progress: 0, // smoothed progress
-      mx: 0, my: 0, tmx: 0, tmy: 0, // mouse parallax (smoothed / target)
+      mx: 0, my: 0, tmx: 0, tmy: 0, // pointer / device-tilt parallax (smoothed / target)
+      tilted: false, // true once real input (mouse or gyroscope) drives the tilt
       dirty: true,
       w: 0, h: 0,
     };
 
     /* ---- progressive preloading: coarse-to-fine so scrubbing works immediately ---- */
-    const order = [];
-    const seen = new Set();
-    for (const step of [16, 8, 4, 2, 1]) {
-      for (let i = 0; i < TOTAL; i += step) if (!seen.has(i)) { seen.add(i); order.push(i); }
-    }
+    let order = [];
     let cursor = 0;
+    const buildOrder = () => {
+      order = [];
+      cursor = 0;
+      const seen = new Set();
+      for (const step of [16, 8, 4, 2, 1]) {
+        for (let i = 0; i < TOTAL; i += step) if (!seen.has(i)) { seen.add(i); order.push(i); }
+      }
+    };
+    buildOrder();
     const loadNext = () => {
       if (cursor >= order.length) return;
       const i = order[cursor++];
+      const gen = generation;
       const img = new Image();
       img.decoding = 'async';
       img.onload = () => {
         const done = () => {
+          if (gen !== generation) return;
           frames[i] = img;
           loadedCount++;
           if (loaderText) loaderText.textContent = `${Math.round((loadedCount / TOTAL) * 100)}%`;
@@ -75,7 +87,25 @@
       img.onerror = loadNext;
       img.src = src(i);
     };
-    for (let k = 0; k < 6; k++) loadNext();
+    const startLoading = () => { for (let k = 0; k < 6; k++) loadNext(); };
+    startLoading();
+    const maybeSwapSet = () => {
+      const next = pickSet();
+      if (next === set) return;
+      set = next;
+      generation++;
+      TOTAL = parseInt(hero.dataset[set === 'pt' ? 'framesPt' : 'framesHd'], 10);
+      const old = frames;
+      frames = new Array(TOTAL);
+      loadedCount = 0;
+      hero.classList.remove('is-loaded');
+      buildOrder();
+      startLoading();
+      // keep showing the old set until the new one has its first frames
+      const keep = old.filter(Boolean);
+      if (keep.length) fallback = keep;
+    };
+    let fallback = null;
 
     const nearest = (i) => {
       if (frames[i]) return frames[i];
@@ -83,7 +113,7 @@
         if (frames[i - d]) return frames[i - d];
         if (frames[i + d]) return frames[i + d];
       }
-      return null;
+      return fallback ? fallback[Math.min(fallback.length - 1, Math.round((i / TOTAL) * fallback.length))] : null;
     };
 
     /* ---- canvas sizing ---- */
@@ -158,13 +188,32 @@
       hero.classList.toggle('is-past-start', p > 0.02);
     };
 
-    /* ---- mouse parallax ---- */
+    /* ---- 3D parallax: mouse on desktop, gyroscope on phones, gentle drift as fallback ---- */
     if (finePointer) {
       addEventListener('pointermove', (e) => {
+        state.tilted = true;
         state.tmx = (e.clientX / innerWidth) * 2 - 1;
         state.tmy = (e.clientY / innerHeight) * 2 - 1;
       }, { passive: true });
       document.addEventListener('pointerleave', () => { state.tmx = 0; state.tmy = 0; });
+    } else if ('DeviceOrientationEvent' in window) {
+      let base = null;
+      const onTilt = (e) => {
+        if (e.beta == null || e.gamma == null) return;
+        if (!base) base = { b: e.beta, g: e.gamma };
+        state.tilted = true;
+        state.tmx = clamp((e.gamma - base.g) / 20, -1, 1);
+        state.tmy = clamp((e.beta - base.b) / 20, -1, 1);
+      };
+      const listen = () => addEventListener('deviceorientation', onTilt, { passive: true });
+      if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+        // iOS asks once, on the first tap
+        addEventListener('touchend', () => {
+          DeviceOrientationEvent.requestPermission().then((r) => r === 'granted' && listen()).catch(() => {});
+        }, { once: true });
+      } else {
+        listen();
+      }
     }
 
     /* ---- render loop: only does work while something is moving ---- */
@@ -177,23 +226,32 @@
       const dp = state.target - state.progress;
       const moving = Math.abs(dp) > 0.00005;
       state.progress = moving ? lerp(state.progress, state.target, 0.11) : state.target;
-      state.mx = lerp(state.mx, state.tmx, 0.06);
-      state.my = lerp(state.my, state.tmy, 0.06);
+      if (!state.tilted) {
+        // no pointer/gyro yet: slow ambient drift so the scene still reads as 3D
+        const t = performance.now() / 1000;
+        state.tmx = Math.sin(t * 0.35) * 0.45;
+        state.tmy = Math.cos(t * 0.27) * 0.3;
+      }
+      state.mx = lerp(state.mx, state.tmx, 0.07);
+      state.my = lerp(state.my, state.tmy, 0.07);
 
       if (moving || state.dirty) {
         draw();
         updateChapters(state.progress);
         state.dirty = false;
       }
-      // 3D camera: gentle dolly-in through each scene + mouse-driven tilt
-      const dolly = 1.04 + Math.sin(state.progress * Math.PI * 4) * 0.012;
+      // 3D camera: scene and text layer tilt in opposite directions => strong depth separation
+      const dolly = 1 + Math.sin(state.progress * Math.PI * 4) * 0.01;
       scene.style.transform =
-        `translate3d(${(-state.mx * 14).toFixed(2)}px, ${(-state.my * 10).toFixed(2)}px, 0) ` +
-        `rotateY(${(state.mx * 2.4).toFixed(3)}deg) rotateX(${(-state.my * 1.8).toFixed(3)}deg) scale(${dolly.toFixed(4)})`;
+        `translate3d(${(-state.mx * 22).toFixed(2)}px, ${(-state.my * 14).toFixed(2)}px, 0) ` +
+        `rotateY(${(state.mx * 5).toFixed(3)}deg) rotateX(${(-state.my * 3.5).toFixed(3)}deg) scale(${dolly.toFixed(4)})`;
+      stage.style.transform =
+        `translate3d(${(state.mx * 16).toFixed(2)}px, ${(state.my * 10).toFixed(2)}px, 0) ` +
+        `rotateY(${(state.mx * -3).toFixed(3)}deg) rotateX(${(state.my * 2).toFixed(3)}deg)`;
     };
 
     addEventListener('scroll', onScroll, { passive: true });
-    addEventListener('resize', () => { resize(); onScroll(); });
+    addEventListener('resize', () => { maybeSwapSet(); resize(); onScroll(); });
     resize();
     onScroll();
     state.progress = state.target;
@@ -207,11 +265,20 @@
   const nav = document.querySelector('[data-nav]');
   const toggle = document.querySelector('.nav__toggle');
   const menu = document.getElementById('mobile-menu');
+  let lastY = scrollY;
   const setNav = () => {
     const threshold = hero && !reduceMotion ? hero.offsetHeight - innerHeight - 40 : 40;
-    nav.classList.toggle('is-solid', scrollY > threshold || toggle.getAttribute('aria-expanded') === 'true');
+    const open = toggle.getAttribute('aria-expanded') === 'true';
+    nav.classList.toggle('is-solid', scrollY > threshold || open);
+    // hide while scrolling down so the 3D scene fills the screen; show again on the way up
+    const delta = scrollY - lastY;
+    if (Math.abs(delta) > 6) {
+      nav.classList.toggle('is-hidden', delta > 0 && scrollY > 120 && !open);
+      lastY = scrollY;
+    }
   };
   addEventListener('scroll', setNav, { passive: true });
+  nav.addEventListener('focusin', () => nav.classList.remove('is-hidden'));
   setNav();
   const closeMenu = () => {
     toggle.setAttribute('aria-expanded', 'false');

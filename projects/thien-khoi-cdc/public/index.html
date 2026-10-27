@@ -15,7 +15,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Allura&family=Be+Vietnam+Pro:wght@300;400;500;600&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap&subset=vietnamese">
-  <link rel="preload" as="image" href="assets/frames/lg/f001.webp" fetchpriority="high">
   <link rel="stylesheet" href="styles.css">
   <script type="application/ld+json">{{{JSONLD}}}</script>
   <script src="app.js" defer></script>
@@ -48,18 +47,18 @@
 
   <main>
     <!-- ============ HERO: SCROLL-DRIVEN 3D FLY-THROUGH ============ -->
-    <section class="hero" id="top" data-hero data-frames="180" aria-label="Giới thiệu hành trình kiến tạo">
+    <section class="hero" id="top" data-hero data-frames-hd="300" data-frames-pt="180" aria-label="Giới thiệu hành trình kiến tạo">
       <div class="hero__sticky">
         <div class="hero__scene" data-scene>
           <canvas class="hero__canvas" data-canvas aria-hidden="true"></canvas>
-          <img class="hero__poster" src="assets/frames/lg/f001.webp" alt="" aria-hidden="true">
+          <picture class="hero__poster" aria-hidden="true"><source media="(orientation: portrait)" srcset="assets/frames/pt/f001.webp"><img src="assets/frames/poster.webp" alt="" fetchpriority="high"></picture>
         </div>
         <div class="hero__shade" aria-hidden="true"></div>
 
         <div class="hero__stage" data-stage>
-          <div class="chap chap--intro" data-chap data-in="0" data-out="0.14">
+          <div class="chap chap--intro" data-chap data-in="0" data-out="0.12">
             <p class="eyebrow">Thiết kế · Xây dựng · Nội thất — TP. Hồ Chí Minh</p>
-            <h1 class="hero__title">Chúng tôi kiến tạo<br><span class="script">những không gian</span> đáng sống</h1>
+            <h1 class="hero__title">Kiến tạo <span class="script">không gian</span><br>đáng sống</h1>
             <p class="hero__sub">Một đầu mối duy nhất từ bản vẽ đầu tiên đến ngày bàn giao chìa khóa.</p>
           </div>
 

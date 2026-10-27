@@ -35,7 +35,7 @@ test('renders index with content and no leftover placeholders', async () => {
 
 test('static files and traversal guard', async () => {
   assert.equal((await fetch(base + '/app.js')).status, 200);
-  assert.equal((await fetch(base + '/assets/frames/lg/f180.webp')).status, 200);
+  assert.equal((await fetch(base + '/assets/frames/hd/f300.webp')).status, 200);
   assert.notEqual((await fetch(base + '/..%2Fserver.js')).status, 200);
   assert.equal((await fetch(base + '/nope')).status, 404);
 });
